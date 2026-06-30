@@ -1,13 +1,33 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "86e837ef57f22430630a368cf068268d"
-application_url = "https://example.com"
+name = "Grow Checkout"
+application_url = "https://grow-checkout.com"
 embedded = true
-name = "upsell"
+
+[build]
+automatically_update_urls_on_dev = true
+include_config_on_deploy = true
+
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,write_metaobjects,write_metaobject_definitions"
+scopes = "read_validations,write_validations,read_checkout_and_accounts_configurations,write_checkout_and_accounts_configurations,read_checkout_branding_settings,write_checkout_branding_settings,write_checkouts,read_checkouts,read_price_rules,write_price_rules,read_discounts,write_discounts,write_inventory,read_inventory,write_inventory_transfers,read_inventory_transfers,write_metaobject_definitions,write_metaobjects,read_products,write_products,unauthenticated_read_product_tags"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ "https://grow-checkout.com/api/auth" ]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"
@@ -32,21 +52,3 @@ required = true
 [metaobjects.app.example.fields.description]
 name = "Description"
 type = "multi_line_text_field"
-
-[webhooks]
-api_version = "2026-07"
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/app/uninstalled"
-  topics = [ "app/uninstalled" ]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/app/scopes_update"
-  topics = [ "app/scopes_update" ]
-
-[auth]
-redirect_urls = [ "https://example.com/api/auth" ]
-
-[build]
-include_config_on_deploy = true
-automatically_update_urls_on_dev = true
