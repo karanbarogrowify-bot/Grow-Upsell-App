@@ -93,16 +93,6 @@ export default function Dashboard() {
           }}
         >
           <div>
-            <p
-              style={{
-                margin: "0 0 6px",
-                color: "#6d7175",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
-            >
-              CHECKOUT UPSELL
-            </p>
             <h1
               style={{
                 margin: 0,
@@ -111,7 +101,7 @@ export default function Dashboard() {
                 fontWeight: 700,
               }}
             >
-              Good to see you
+              CHECKOUT UPSELL
             </h1>
             <p style={{ margin: "8px 0 0", color: "#6d7175" }}>
               Here’s a snapshot of your checkout experience.

@@ -6,6 +6,7 @@ export default function DiscountForm({
   selectedType,
   onSave,
   onClose,
+  discountSource = "custom", // 'custom' or 'native'
 }) {
   const category = initialDiscount?.category ?? selectedType;
   const [title, setTitle] = useState(initialDiscount?.title ?? "");
@@ -19,6 +20,15 @@ export default function DiscountForm({
     initialDiscount?.minimumPurchase ?? 0,
   );
   const [status, setStatus] = useState(initialDiscount?.status ?? "Active");
+  const [source] = useState(initialDiscount?.source ?? discountSource);
+
+  // Buy X Get Y specific fields
+  const [buyQuantity, setBuyQuantity] = useState(initialDiscount?.buyQuantity ?? 1);
+  const [getQuantity, setGetQuantity] = useState(initialDiscount?.getQuantity ?? 1);
+  const [buyItemType, setBuyItemType] = useState(initialDiscount?.buyItemType ?? "product");
+  const [getItemType, setGetItemType] = useState(initialDiscount?.getItemType ?? "product");
+  const [rewardValue, setRewardValue] = useState(initialDiscount?.rewardValue ?? 10);
+  const [rewardType, setRewardType] = useState(initialDiscount?.rewardType ?? "Percentage");
 
   useEffect(() => {
     const closeOnEscape = (event) => event.key === "Escape" && onClose();
@@ -38,17 +48,46 @@ export default function DiscountForm({
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    onSave({
+    const baseData = {
       id: initialDiscount?.id ?? Date.now(),
       category,
       method,
+      source,
       title: title.trim(),
       code: method === "Discount code" ? code.trim().toUpperCase() : "",
-      type,
-      value: Number(value),
-      minimumPurchase: Number(minimumPurchase),
       status,
-    });
+    };
+
+    let discountData = baseData;
+
+    if (category === "Buy X get Y") {
+      discountData = {
+        ...baseData,
+        buyQuantity: Number(buyQuantity),
+        getQuantity: Number(getQuantity),
+        buyItemType,
+        getItemType,
+        rewardValue: Number(rewardValue),
+        rewardType,
+        minimumPurchase: Number(minimumPurchase),
+      };
+    } else if (category === "Free shipping") {
+      discountData = {
+        ...baseData,
+        type: "Free shipping",
+        value: 0,
+        minimumPurchase: Number(minimumPurchase),
+      };
+    } else {
+      discountData = {
+        ...baseData,
+        type,
+        value: Number(value),
+        minimumPurchase: Number(minimumPurchase),
+      };
+    }
+
+    onSave(discountData);
     onClose();
   };
 
@@ -94,11 +133,17 @@ export default function DiscountForm({
             <p style={{ margin: "6px 0 22px", color: "#6d7175" }}>
               Configure the offer customers can use at checkout.
             </p>
+            {source === "native" && (
+              <div style={{ padding: "8px 12px", marginBottom: "16px", borderRadius: "8px", background: "#fff9e6", color: "#8b5900", fontSize: "12px" }}>
+                ✓ Linked to Shopify native discount
+              </div>
+            )}
           </div>
           <button type="button" onClick={onClose} style={{ border: 0, background: "none", fontSize: "24px", cursor: "pointer" }}>×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Common fields for all discount types */}
           <div style={{ marginBottom: "16px" }}>
             <label htmlFor="discount-method">Method</label>
             <select
@@ -111,52 +156,254 @@ export default function DiscountForm({
               <option>Automatic discount</option>
             </select>
           </div>
+
           <div style={{ marginBottom: "16px" }}>
             <label htmlFor="discount-title">Internal title</label>
-            <input id="discount-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Summer promotion" required style={fieldStyle} />
+            <input
+              id="discount-title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Summer promotion"
+              required
+              style={fieldStyle}
+            />
           </div>
+
           {method === "Discount code" && (
-          <div style={{ marginBottom: "16px" }}>
-            <label htmlFor="discount-code">Discount code</label>
-            <input id="discount-code" value={code} onChange={(event) => setCode(event.target.value)} placeholder="SUMMER20" required style={{ ...fieldStyle, textTransform: "uppercase" }} />
-          </div>
+            <div style={{ marginBottom: "16px" }}>
+              <label htmlFor="discount-code">Discount code</label>
+              <input
+                id="discount-code"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                placeholder="SUMMER20"
+                required
+                style={{ ...fieldStyle, textTransform: "uppercase" }}
+              />
+            </div>
           )}
+
+          {/* Buy X Get Y Discount */}
+          {category === "Buy X get Y" && (
+            <>
+              <div style={{ padding: "12px", marginBottom: "16px", borderRadius: "8px", background: "#f1f8ff", color: "#005bd3", fontSize: "13px" }}>
+                💡 Create a "buy quantity X and get quantity Y" offer
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
+                <div>
+                  <label htmlFor="buy-quantity">Buy Quantity (X)</label>
+                  <input
+                    id="buy-quantity"
+                    type="number"
+                    min="1"
+                    value={buyQuantity}
+                    onChange={(event) => setBuyQuantity(event.target.value)}
+                    required
+                    style={fieldStyle}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="get-quantity">Get Quantity (Y)</label>
+                  <input
+                    id="get-quantity"
+                    type="number"
+                    min="1"
+                    value={getQuantity}
+                    onChange={(event) => setGetQuantity(event.target.value)}
+                    required
+                    style={fieldStyle}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
+                <div>
+                  <label htmlFor="buy-item-type">Buy Item Type</label>
+                  <select
+                    id="buy-item-type"
+                    value={buyItemType}
+                    onChange={(event) => setBuyItemType(event.target.value)}
+                    style={fieldStyle}
+                  >
+                    <option value="product">Product</option>
+                    <option value="collection">Collection</option>
+                    <option value="any">Any Product</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="get-item-type">Get Item Type</label>
+                  <select
+                    id="get-item-type"
+                    value={getItemType}
+                    onChange={(event) => setGetItemType(event.target.value)}
+                    style={fieldStyle}
+                  >
+                    <option value="product">Product</option>
+                    <option value="collection">Collection</option>
+                    <option value="same">Same as Buy</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
+                <div>
+                  <label htmlFor="reward-type">Reward Type</label>
+                  <select
+                    id="reward-type"
+                    value={rewardType}
+                    onChange={(event) => setRewardType(event.target.value)}
+                    style={fieldStyle}
+                  >
+                    <option>Percentage</option>
+                    <option>Fixed amount</option>
+                    <option>Free</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="reward-value">
+                    {rewardType === "Free" ? "Applies automatically" : rewardType === "Percentage" ? "Discount %" : "Discount (₹)"}
+                  </label>
+                  <input
+                    id="reward-value"
+                    type="number"
+                    min={rewardType === "Percentage" ? "1" : "0"}
+                    max={rewardType === "Percentage" ? "100" : undefined}
+                    value={rewardType === "Free" ? "100% off" : rewardValue}
+                    onChange={(event) => setRewardValue(event.target.value)}
+                    disabled={rewardType === "Free"}
+                    required={rewardType !== "Free"}
+                    style={{ ...fieldStyle, opacity: rewardType === "Free" ? 0.6 : 1 }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Free Shipping Discount */}
           {category === "Free shipping" && (
             <div style={{ padding: "12px", marginBottom: "16px", borderRadius: "8px", background: "#f1f8ff", color: "#005bd3" }}>
-              Shipping charges are removed when the minimum purchase is met.
+              🚚 Shipping charges are removed when the minimum purchase is met.
             </div>
           )}
-          {category !== "Free shipping" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
-            <div>
-              <label htmlFor="discount-type">Discount type</label>
-              <select id="discount-type" value={type} onChange={(event) => setType(event.target.value)} style={fieldStyle}>
-                <option>Percentage</option>
-                <option>Fixed amount</option>
-              </select>
+
+          {/* Amount off Products / Amount off Order */}
+          {(category === "Amount off products" || category === "Amount off order") && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
+              <div>
+                <label htmlFor="discount-type">Discount type</label>
+                <select
+                  id="discount-type"
+                  value={type}
+                  onChange={(event) => setType(event.target.value)}
+                  style={fieldStyle}
+                >
+                  <option>Percentage</option>
+                  <option>Fixed amount</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="discount-value">{type === "Percentage" ? "Percentage" : "Amount (₹)"}</label>
+                <input
+                  id="discount-value"
+                  type="number"
+                  min="1"
+                  max={type === "Percentage" ? 100 : undefined}
+                  value={value}
+                  onChange={(event) => setValue(event.target.value)}
+                  required
+                  style={fieldStyle}
+                />
+              </div>
             </div>
-            <div>
-              <label htmlFor="discount-value">{type === "Percentage" ? "Percentage" : "Amount (₹)"}</label>
-              <input id="discount-value" type="number" min="1" max={type === "Percentage" ? 100 : undefined} value={value} onChange={(event) => setValue(event.target.value)} required style={fieldStyle} />
-            </div>
-          </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-            <div>
-              <label htmlFor="minimum-purchase">Minimum purchase (₹)</label>
-              <input id="minimum-purchase" type="number" min="0" value={minimumPurchase} onChange={(event) => setMinimumPurchase(event.target.value)} style={fieldStyle} />
+
+          {/* Minimum Purchase and Status (for all except Buy X Get Y which has separate structure) */}
+          {category !== "Buy X get Y" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
+              <div>
+                <label htmlFor="minimum-purchase">Minimum purchase (₹)</label>
+                <input
+                  id="minimum-purchase"
+                  type="number"
+                  min="0"
+                  value={minimumPurchase}
+                  onChange={(event) => setMinimumPurchase(event.target.value)}
+                  style={fieldStyle}
+                />
+              </div>
+              <div>
+                <label htmlFor="discount-status">Status</label>
+                <select
+                  id="discount-status"
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value)}
+                  style={fieldStyle}
+                >
+                  <option>Active</option>
+                  <option>Draft</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label htmlFor="discount-status">Status</label>
-              <select id="discount-status" value={status} onChange={(event) => setStatus(event.target.value)} style={fieldStyle}>
-                <option>Active</option>
-                <option>Draft</option>
-              </select>
+          )}
+
+          {/* For Buy X Get Y */}
+          {category === "Buy X get Y" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
+              <div>
+                <label htmlFor="minimum-purchase-bxgy">Minimum purchase (₹)</label>
+                <input
+                  id="minimum-purchase-bxgy"
+                  type="number"
+                  min="0"
+                  value={minimumPurchase}
+                  onChange={(event) => setMinimumPurchase(event.target.value)}
+                  style={fieldStyle}
+                />
+              </div>
+              <div>
+                <label htmlFor="discount-status-bxgy">Status</label>
+                <select
+                  id="discount-status-bxgy"
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value)}
+                  style={fieldStyle}
+                >
+                  <option>Active</option>
+                  <option>Draft</option>
+                </select>
+              </div>
             </div>
-          </div>
+          )}
+
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
-            <button type="button" onClick={onClose} style={{ padding: "10px 16px", border: "1px solid #c9cccf", borderRadius: "8px", background: "#fff", cursor: "pointer" }}>Cancel</button>
-            <button type="submit" style={{ padding: "10px 16px", border: 0, borderRadius: "8px", background: "#303030", color: "#fff", fontWeight: 600, cursor: "pointer" }}>{initialDiscount ? "Update discount" : "Create discount"}</button>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: "10px 16px",
+                border: "1px solid #c9cccf",
+                borderRadius: "8px",
+                background: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: "10px 16px",
+                border: 0,
+                borderRadius: "8px",
+                background: "#303030",
+                color: "#fff",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {initialDiscount ? "Update discount" : "Create discount"}
+            </button>
           </div>
         </form>
       </section>
@@ -175,8 +422,10 @@ DiscountForm.propTypes = {
     status: PropTypes.string.isRequired,
     category: PropTypes.string,
     method: PropTypes.string,
+    source: PropTypes.string,
   }),
   selectedType: PropTypes.string,
+  discountSource: PropTypes.string,
   onSave: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
 };

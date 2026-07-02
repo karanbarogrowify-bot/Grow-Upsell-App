@@ -13,7 +13,10 @@ export default function DiscountTypeModal({ onSelect, onClose }) {
       <button type="button" aria-label="Close discount type picker" onClick={onClose} style={{ position: "absolute", inset: 0, border: 0, background: "none" }} />
       <section role="dialog" aria-modal="true" aria-labelledby="discount-type-title" style={{ position: "relative", width: "100%", maxWidth: "540px", borderRadius: "14px", background: "#fff", boxShadow: "0 20px 50px rgba(0,0,0,.2)", overflow: "hidden" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px" }}>
-          <h2 id="discount-type-title" style={{ margin: 0, fontSize: "20px" }}>Select discount type</h2>
+          <div>
+            <h2 id="discount-type-title" style={{ margin: 0, fontSize: "20px" }}>Select custom discount type</h2>
+            <p style={{ margin: "6px 0 0", color: "#6d7175", fontSize: "14px" }}>Create a new discount for this upsell offer</p>
+          </div>
           <button type="button" onClick={onClose} style={{ border: 0, background: "none", fontSize: "24px", cursor: "pointer" }}>×</button>
         </div>
         {types.map(([name, description]) => (
