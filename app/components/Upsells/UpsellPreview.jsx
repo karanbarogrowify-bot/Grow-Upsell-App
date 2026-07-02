@@ -1,7 +1,12 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
 
-export default function UpsellPreview({ layout = "grid", title = "Recommended Products", description = "We think you'll love these" }) {
+export default function UpsellPreview({
+  layout = "grid",
+  title = "Recommended Products",
+  description = "We think you'll love these",
+  actionType = "recommend",
+}) {
   const [selectedLayout, setSelectedLayout] = useState(layout);
 
   const mockProducts = [
@@ -105,8 +110,13 @@ export default function UpsellPreview({ layout = "grid", title = "Recommended Pr
         {selectedLayout === "slider" && renderSliderLayout()}
       </div>
 
-      <div style={{ marginTop: "16px", padding: "12px", background: "#f1f8ff", borderRadius: "8px", fontSize: "12px", color: "#005bd3" }}>
-        Layout: <strong>{selectedLayout.charAt(0).toUpperCase() + selectedLayout.slice(1)}</strong>
+      <div style={{ marginTop: "16px", display: "grid", gap: "10px" }}>
+        <div style={{ padding: "12px", background: "#f1f8ff", borderRadius: "8px", fontSize: "12px", color: "#005bd3" }}>
+          Layout: <strong>{selectedLayout.charAt(0).toUpperCase() + selectedLayout.slice(1)}</strong>
+        </div>
+        <div style={{ padding: "12px", background: "#eef6ff", borderRadius: "8px", fontSize: "12px", color: "#1b4d91" }}>
+          Action: <strong>{actionType === "directAdd" ? "Direct Add to Checkout" : "Recommend Products"}</strong>
+        </div>
       </div>
     </div>
   );

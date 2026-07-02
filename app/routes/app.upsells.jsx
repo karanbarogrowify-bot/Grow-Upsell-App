@@ -14,6 +14,7 @@ export default function Upsells() {
     title: "",
     description: "",
     layout: "grid",
+    actionType: "recommend",
     targetType: "all",
     targetProducts: [],
     targetCollections: [],
@@ -27,6 +28,7 @@ export default function Upsells() {
       title: "",
       description: "",
       layout: "grid",
+      actionType: "recommend",
       targetType: "all",
       targetProducts: [],
       targetCollections: [],
@@ -71,11 +73,12 @@ export default function Upsells() {
 
   return (
     <div style={{ padding: "24px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div>
-          <h1 style={{ fontSize: "28px", fontWeight: 700, margin: 0 }}>Upsells</h1>
-          <p style={{ margin: "8px 0 0", color: "#6d7175" }}>Create and manage product upsell rules for checkout</p>
-        </div>
+      <div style={{ width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+          <div>
+            <h1 style={{ fontSize: "28px", fontWeight: 700, margin: 0 }}>Upsells</h1>
+            <p style={{ margin: "8px 0 0", color: "#6d7175" }}>Create and manage product upsell rules for checkout</p>
+          </div>
         <button
           type="button"
           onClick={() => {
@@ -256,6 +259,34 @@ export default function Upsells() {
                 )}
               </div>
 
+              {/* Action Type */}
+              <div>
+                <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: 600 }}>Action Type</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+                  {[
+                    { value: "recommend", label: "Recommend Products", helper: "Show product suggestions at checkout" },
+                    { value: "directAdd", label: "Direct Add to Checkout", helper: "Add the upsell item directly to checkout" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, actionType: option.value })}
+                      style={{
+                        padding: "16px",
+                        border: formData.actionType === option.value ? "2px solid #005bd3" : "1px solid #c9cccf",
+                        borderRadius: "8px",
+                        background: formData.actionType === option.value ? "#f1f8ff" : "#fff",
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                    >
+                      <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>{option.label}</div>
+                      <div style={{ fontSize: "12px", color: "#6d7175" }}>{option.helper}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Trigger Rules */}
               <RuleBuilder
                 onRulesChange={(rules) => setFormData({ ...formData, rules })}
@@ -264,7 +295,7 @@ export default function Upsells() {
 
               {/* Discount */}
               <div>
-                <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: 600 }}>Linked Discount (Optional)</h3>
+                <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: 600 }}>Linked Discount</h3>
                 <select
                   value={formData.discountId}
                   onChange={(e) => setFormData({ ...formData, discountId: e.target.value })}
@@ -280,7 +311,12 @@ export default function Upsells() {
               {/* Preview */}
               <div>
                 <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: 600 }}>Preview</h3>
-                <UpsellPreview layout={formData.layout} title={formData.title} description={formData.description} />
+                <UpsellPreview
+                  layout={formData.layout}
+                  title={formData.title}
+                  description={formData.description}
+                  actionType={formData.actionType}
+                />
               </div>
 
               {/* Actions */}
@@ -325,6 +361,7 @@ export default function Upsells() {
         onDelete={deleteUpsell}
         onToggle={toggleUpsellStatus}
       />
+      </div>
     </div>
   );
 }

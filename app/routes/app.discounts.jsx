@@ -44,7 +44,7 @@ export default function Discounts() {
     <main style={{ minHeight: "100%", padding: "32px 24px 48px", background: "#f6f6f7" }}>
       {typePickerOpen && <DiscountTypeModal onClose={() => setTypePickerOpen(false)} onSelect={(type) => { setSelectedType(type); setTypePickerOpen(false); setFormOpen(true); }} />}
       {formOpen && <DiscountForm initialDiscount={editingDiscount} selectedType={selectedType} onSave={saveDiscount} onClose={closeForm} />}
-      <div style={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}>
+      <div style={{ width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "20px", marginBottom: "24px" }}>
           <div>
             <h1 style={{ margin: 0, fontSize: "28px" }}>Discounts</h1>
