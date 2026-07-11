@@ -1,28 +1,43 @@
-import { data } from "react-router";
+import { getActiveCheckoutMessages, saveMessages } from "../services/messages.server";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+function json(data, init = {}) {
+  return new Response(JSON.stringify(data), {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...corsHeaders,
+      ...init.headers,
+    },
+  });
+}
 
 export async function loader({ request }) {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
+  const messages = getActiveCheckoutMessages(shop);
 
-  if (!shop) {
-    return data({ enabled: false, products: [] });
+  return json({
+    enabled: messages.length > 0,
+    messages,
+  });
+}
+
+export async function action({ request }) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  // Temporary static data for testing checkout extension
-  return data({
-    enabled: true,
-    title: "Recommended for you",
-    description: "Add these products before checkout",
-    layout: "stack",
-    products: [
-      {
-        title: "Sample Upsell Product",
-        description: "Perfect add-on for your order",
-        image: "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png",
-        price: "₹999",
-        variantId: "gid://shopify/ProductVariant/YOUR_VARIANT_ID",
-        discountLabel: "Special checkout offer",
-      },
-    ],
+  const body = await request.json();
+  const messages = saveMessages(body.shop, body.messages);
+
+  return json({
+    ok: true,
+    messages,
   });
 }
