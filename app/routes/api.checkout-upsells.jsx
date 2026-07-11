@@ -1,9 +1,8 @@
 import { authenticate } from "../shopify.server";
 import {
-  getActiveCheckoutMessages,
-  saveMessages,
-  syncCheckoutMessagesMetafield,
-} from "../services/messages.server";
+  getActiveCheckoutUpsells,
+  syncCheckoutUpsellsMetafield,
+} from "../services/upsells.server";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,14 +21,10 @@ function json(data, init = {}) {
   });
 }
 
-export async function loader({ request }) {
-  const url = new URL(request.url);
-  const shop = url.searchParams.get("shop");
-  const messages = getActiveCheckoutMessages(shop);
-
+export async function loader() {
   return json({
-    enabled: messages.length > 0,
-    messages,
+    enabled: false,
+    upsells: [],
   });
 }
 
@@ -38,14 +33,15 @@ export async function action({ request }) {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  const { admin, session } = await authenticate.admin(request);
+  const { admin } = await authenticate.admin(request);
   const body = await request.json();
-  const shop = body.shop || session.shop;
-  const messages = saveMessages(shop, body.messages);
-  await syncCheckoutMessagesMetafield(admin, shop, messages);
+  const upsells = Array.isArray(body.upsells) ? body.upsells : [];
+  const checkoutUpsells = await syncCheckoutUpsellsMetafield(admin, upsells);
 
   return json({
     ok: true,
-    messages,
+    enabled: checkoutUpsells.length > 0,
+    upsells: checkoutUpsells,
+    preview: getActiveCheckoutUpsells(upsells),
   });
 }
