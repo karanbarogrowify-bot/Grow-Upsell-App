@@ -207,3 +207,4 @@ function compare(actual, operator, expected) {
 
   return actual > expected;
 }
+
