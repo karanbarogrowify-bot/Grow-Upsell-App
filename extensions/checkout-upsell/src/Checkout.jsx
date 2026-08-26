@@ -194,60 +194,6 @@ function ProductsLayout({ upsell, cartLines }) {
   );
 }
 
-// function ProductCard({ product, cartLine }) {
-//   const canAdd = Boolean(product.variantId);
-//   const canRemove = Boolean(cartLine?.id);
-//   const productTitle = titleCase(product.title);
-
-//   return (
-//     <s-box border="base" borderRadius="base" padding="base">
-//       <s-grid
-//         gridTemplateColumns={product.image ? "56px 1fr auto" : "1fr auto"}
-//         gap="base"
-//         alignItems="center"
-//       >
-//         {product.image && (
-//           <s-image
-//             src={product.image}
-//             alt={product.title}
-//             inlineSize="56px"
-//             aspectRatio={1}
-//             borderRadius="base"
-//           />
-//         )}
-
-//         <s-stack gap="small">
-//           <s-text>{productTitle}</s-text>
-//           {product.price && <s-text>{product.price}</s-text>}
-//         </s-stack>
-
-//         <s-grid gridTemplateColumns="auto auto" gap="small" alignItems="center">
-//           {canAdd && (
-//             <s-button
-//               variant="primary"
-//               inlineSize="fit-content"
-//               onClick={() => addProduct(product.variantId)}
-//             >
-//               Add
-//             </s-button>
-//           )}
-
-//           {canRemove && (
-//             <s-button
-//               variant="tertiary"
-//               inlineSize="fit-content"
-//               accessibilityLabel={`Remove ${productTitle}`}
-//               onClick={() => removeProduct(cartLine)}
-//             >
-//               ×
-//             </s-button>
-//           )}
-//         </s-grid>
-//       </s-grid>
-//     </s-box>
-//   );
-// }
-
 function ProductCard({ product, cartLine }) {
   const canAdd = Boolean(product.variantId);
   const canRemove = Boolean(cartLine?.id);
