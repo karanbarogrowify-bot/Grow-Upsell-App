@@ -22,7 +22,6 @@ function normalizeProduct(product) {
     handle: product.handle,
     description: product.description,
     image: product.image,
-    price: product.price,
     discountLabel: product.discountLabel,
   };
 }
