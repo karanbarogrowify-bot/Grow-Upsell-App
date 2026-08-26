@@ -12517,5 +12517,12 @@
         "url": "https://github.com/sponsors/sindresorhus"
       }
     }
+  },
+  "devDependencies": {
+    "@shopify/ui-extensions": "^2026.4.4"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.11.1",
+    "preact": "^10.29.8"
   }
 }

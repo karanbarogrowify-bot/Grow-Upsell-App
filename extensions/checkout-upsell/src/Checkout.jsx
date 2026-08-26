@@ -14,6 +14,43 @@ export default async () => {
 
 function CheckoutUpsell() {
 
+  const [localizedPrices, setLocalizedPrices] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLocalizedPrices() {
+      const products = visibleUpsells.flatMap(
+        (upsell) => upsell.recommendedProducts || []
+      );
+
+      if (products.length === 0) {
+        setLocalizedPrices({});
+        return;
+      }
+
+      const prices = await fetchLocalizedPrices(
+        products,
+        buyerCountry
+      );
+
+      if (!cancelled) {
+        setLocalizedPrices(prices);
+      }
+    }
+
+    loadLocalizedPrices();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visibleUpsells, buyerCountry]);
+
+  const buyerCountry =
+  shopify.localization.country.value?.isoCode || "";
+  const buyerCountry =
+  shopify.localization.country.value?.isoCode || "";
+
   const cartLines =
 
     shopify.lines.value ?? EMPTY_ARRAY;
@@ -152,6 +189,7 @@ function CheckoutUpsell() {
           <ProductsLayout
             upsell={upsell}
             cartLines={cartLines}
+            localizedPrices={localizedPrices}
           />
         </s-stack>
       ))}
@@ -159,7 +197,101 @@ function CheckoutUpsell() {
   );
 }
 
-function ProductsLayout({ upsell, cartLines }) {
+async function fetchLocalizedPrices(products, country) {
+  const variantIds = [
+    ...new Set(
+      products
+        .map((product) => product.variantId)
+        .filter(Boolean)
+    ),
+  ];
+
+  if (variantIds.length === 0) {
+    return {};
+  }
+
+  try {
+    const query = country
+      ? `
+        query CheckoutUpsellPrices(
+          $variantIds: [ID!]!
+          $country: CountryCode
+        ) @inContext(country: $country) {
+          nodes(ids: $variantIds) {
+            ... on ProductVariant {
+              id
+              price {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }
+      `
+      : `
+        query CheckoutUpsellPrices(
+          $variantIds: [ID!]!
+        ) {
+          nodes(ids: $variantIds) {
+            ... on ProductVariant {
+              id
+              price {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }
+      `;
+
+    const variables = country
+      ? {
+          variantIds,
+          country,
+        }
+      : {
+          variantIds,
+        };
+
+    const response = await shopify.query(query, {
+      variables,
+      version: "2026-04",
+    });
+
+    if (response?.errors?.length) {
+      console.error(
+        "Localized price query errors:",
+        response.errors
+      );
+
+      return {};
+    }
+
+    const prices = {};
+
+    for (const node of response?.data?.nodes || []) {
+      if (!node?.id || !node?.price) {
+        continue;
+      }
+
+      prices[node.id] = {
+        amount: Number(node.price.amount),
+        currencyCode: node.price.currencyCode,
+      };
+    }
+
+    return prices;
+  } catch (error) {
+    console.error(
+      "Failed to fetch localized upsell prices:",
+      error
+    );
+
+    return {};
+  }
+}
+
+function ProductsLayout({ upsell, cartLines, localizedPrices }) {
   const products = upsell.recommendedProducts || [];
   const layout = upsell.layout === "stack" ? "stack" : "grid";
 
@@ -170,8 +302,12 @@ function ProductsLayout({ upsell, cartLines }) {
           {products.map((product) => (
             <ProductCard
               key={product.id || product.title}
+
               product={product}
+
               cartLine={findCartLine(product, cartLines)}
+
+              localizedPrice={localizedPrices[product.variantId]}
             />
           ))}
         </s-stack>
@@ -187,6 +323,7 @@ function ProductsLayout({ upsell, cartLines }) {
             key={product.id || product.title}
             product={product}
             cartLine={findCartLine(product, cartLines)}
+            localizedPrice={localizedPrices[product.variantId]}
           />
         ))}
       </s-grid>
@@ -194,7 +331,7 @@ function ProductsLayout({ upsell, cartLines }) {
   );
 }
 
-function ProductCard({ product, cartLine }) {
+function ProductCard({ product, cartLine, localizedPrice }) {
   const canAdd = Boolean(product.variantId);
   const canRemove = Boolean(cartLine?.id);
   const productTitle = titleCase(product.title);
@@ -228,9 +365,18 @@ function ProductCard({ product, cartLine }) {
           <s-stack gap="small">
             <s-text>{productTitle}</s-text>
 
-            {product.price && (
-              <s-text>{product.price}</s-text>
-            )}
+            {localizedPrice ? (
+              <s-text>
+                {formatPrice(
+                  localizedPrice.amount,
+                  localizedPrice.currencyCode
+                )}
+              </s-text>
+            ) : product.price ? (
+              <s-text>
+                {product.price}
+              </s-text>
+            ) : null}
 
             <s-button
               variant="tertiary"
@@ -291,11 +437,18 @@ function ProductCard({ product, cartLine }) {
             />
           )}
 
-          {product.price && (
-            <s-text type="strong">
+          {localizedPrice ? (
+            <s-text>
+              {formatPrice(
+                localizedPrice.amount,
+                localizedPrice.currencyCode
+              )}
+            </s-text>
+          ) : product.price ? (
+            <s-text>
               {product.price}
             </s-text>
-          )}
+          ) : null}
 
           <s-stack gap="small">
             <s-text type="strong">
@@ -320,6 +473,17 @@ function ProductCard({ product, cartLine }) {
       </s-modal>
     </>
   );
+}
+
+function formatPrice(amount, currencyCode) {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currencyCode,
+    }).format(amount);
+  } catch {
+    return `${currencyCode} ${amount}`;
+  }
 }
 
 function titleCase(value = "") {
