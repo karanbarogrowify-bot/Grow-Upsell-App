@@ -194,57 +194,185 @@ function ProductsLayout({ upsell, cartLines }) {
   );
 }
 
+// function ProductCard({ product, cartLine }) {
+//   const canAdd = Boolean(product.variantId);
+//   const canRemove = Boolean(cartLine?.id);
+//   const productTitle = titleCase(product.title);
+
+//   return (
+//     <s-box border="base" borderRadius="base" padding="base">
+//       <s-grid
+//         gridTemplateColumns={product.image ? "56px 1fr auto" : "1fr auto"}
+//         gap="base"
+//         alignItems="center"
+//       >
+//         {product.image && (
+//           <s-image
+//             src={product.image}
+//             alt={product.title}
+//             inlineSize="56px"
+//             aspectRatio={1}
+//             borderRadius="base"
+//           />
+//         )}
+
+//         <s-stack gap="small">
+//           <s-text>{productTitle}</s-text>
+//           {product.price && <s-text>{product.price}</s-text>}
+//         </s-stack>
+
+//         <s-grid gridTemplateColumns="auto auto" gap="small" alignItems="center">
+//           {canAdd && (
+//             <s-button
+//               variant="primary"
+//               inlineSize="fit-content"
+//               onClick={() => addProduct(product.variantId)}
+//             >
+//               Add
+//             </s-button>
+//           )}
+
+//           {canRemove && (
+//             <s-button
+//               variant="tertiary"
+//               inlineSize="fit-content"
+//               accessibilityLabel={`Remove ${productTitle}`}
+//               onClick={() => removeProduct(cartLine)}
+//             >
+//               ×
+//             </s-button>
+//           )}
+//         </s-grid>
+//       </s-grid>
+//     </s-box>
+//   );
+// }
+
 function ProductCard({ product, cartLine }) {
   const canAdd = Boolean(product.variantId);
   const canRemove = Boolean(cartLine?.id);
   const productTitle = titleCase(product.title);
 
+  const modalId = `product-details-${String(product.id || product.variantId || product.title)
+    .replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+
+  const productDescription =
+    product.description?.trim() || "No additional product details available.";
+
   return (
-    <s-box border="base" borderRadius="base" padding="base">
-      <s-grid
-        gridTemplateColumns={product.image ? "56px 1fr auto" : "1fr auto"}
-        gap="base"
-        alignItems="center"
-      >
-        {product.image && (
-          <s-image
-            src={product.image}
-            alt={product.title}
-            inlineSize="56px"
-            aspectRatio={1}
-            borderRadius="base"
-          />
-        )}
-
-        <s-stack gap="small">
-          <s-text>{productTitle}</s-text>
-          {product.price && <s-text>{product.price}</s-text>}
-        </s-stack>
-
-        <s-grid gridTemplateColumns="auto auto" gap="small" alignItems="center">
-          {canAdd && (
-            <s-button
-              variant="primary"
-              inlineSize="fit-content"
-              onClick={() => addProduct(product.variantId)}
-            >
-              Add
-            </s-button>
+    <>
+      <s-box border="base" borderRadius="base" padding="base">
+        <s-grid
+          gridTemplateColumns={
+            product.image ? "56px 1fr auto" : "1fr auto"
+          }
+          gap="base"
+          alignItems="center"
+        >
+          {product.image && (
+            <s-image
+              src={product.image}
+              alt={product.title}
+              inlineSize="56px"
+              aspectRatio={1}
+              borderRadius="base"
+            />
           )}
 
-          {canRemove && (
+          <s-stack gap="small">
+            <s-text>{productTitle}</s-text>
+
+            {product.price && (
+              <s-text>{product.price}</s-text>
+            )}
+
             <s-button
               variant="tertiary"
               inlineSize="fit-content"
-              accessibilityLabel={`Remove ${productTitle}`}
-              onClick={() => removeProduct(cartLine)}
+              command="--show"
+              commandFor={modalId}
             >
-              ×
+              Details
             </s-button>
-          )}
+          </s-stack>
+
+          <s-grid
+            gridTemplateColumns="auto auto"
+            gap="small"
+            alignItems="center"
+          >
+            {canAdd && (
+              <s-button
+                variant="primary"
+                inlineSize="fit-content"
+                onClick={() =>
+                  addProduct(product.variantId)
+                }
+              >
+                Add
+              </s-button>
+            )}
+
+            {canRemove && (
+              <s-button
+                variant="tertiary"
+                inlineSize="fit-content"
+                accessibilityLabel={`Remove ${productTitle}`}
+                onClick={() =>
+                  removeProduct(cartLine)
+                }
+              >
+                ×
+              </s-button>
+            )}
+          </s-grid>
         </s-grid>
-      </s-grid>
-    </s-box>
+      </s-box>
+
+      <s-modal
+        id={modalId}
+        heading={productTitle}
+        size="base"
+      >
+        <s-stack gap="base">
+
+          {product.image && (
+            <s-image
+              src={product.image}
+              alt={product.title}
+              aspectRatio={1}
+              borderRadius="base"
+            />
+          )}
+
+          {product.price && (
+            <s-text type="strong">
+              {product.price}
+            </s-text>
+          )}
+
+          <s-stack gap="small">
+            <s-text type="strong">
+              Product Details
+            </s-text>
+
+            <s-text>
+              {productDescription}
+            </s-text>
+          </s-stack>
+
+        </s-stack>
+
+        <s-button
+          slot="primary-action"
+          variant="primary"
+          command="--hide"
+          commandFor={modalId}
+        >
+          Close
+        </s-button>
+      </s-modal>
+    </>
   );
 }
 
