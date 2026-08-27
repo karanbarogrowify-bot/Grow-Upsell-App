@@ -512,17 +512,13 @@ function ProductCard({
       >
         <s-stack gap="base">
 
-          {/* PRODUCT TITLE */}
-
-          <s-text type="strong">
-            {productTitle}
-          </s-text>
-
           {/* DESCRIPTION */}
 
-          <s-text>
-            {productDescription}
-          </s-text>
+          <ProductDescription
+
+            description={productDescription}
+
+          />
 
         </s-stack>
 
@@ -544,6 +540,250 @@ function ProductCard({
     </>
   );
 }
+
+/* =========================================================
+   PRODUCT DESCRIPTION
+   ========================================================= */
+
+function ProductDescription({ description }) {
+
+  if (!description) {
+
+    return null;
+
+  }
+
+  const blocks = parseDescription(description);
+
+  return (
+
+    <s-stack gap="small">
+
+      {blocks.map((block, index) => {
+
+        if (block.type === "bullet") {
+
+          return (
+
+            <s-stack
+
+              key={index}
+
+              direction="inline"
+
+              gap="small"
+
+            >
+
+              <s-text>•</s-text>
+
+              <s-text>
+
+                {block.text}
+
+              </s-text>
+
+            </s-stack>
+
+          );
+
+        }
+
+        return (
+
+          <s-text key={index}>
+
+            {block.text}
+
+          </s-text>
+
+        );
+
+      })}
+
+    </s-stack>
+
+  );
+
+}
+
+
+/* =========================================================
+
+   DESCRIPTION PARSER
+
+   ========================================================= */
+
+function parseDescription(html) {
+
+  if (!html) {
+
+    return [];
+
+  }
+
+  let value = String(html);
+
+  /*
+
+   * Convert common HTML blocks into line breaks.
+
+   */
+
+  value = value
+
+    .replace(/<br\s*\/?>/gi, "\n")
+
+    .replace(/<\/p>/gi, "\n")
+
+    .replace(/<\/div>/gi, "\n")
+
+    .replace(/<\/h[1-6]>/gi, "\n");
+
+  /*
+
+   * Extract bullet points.
+
+   */
+
+  const bulletItems = [];
+
+  value = value.replace(
+
+    /<li[^>]*>([\s\S]*?)<\/li>/gi,
+
+    (_, content) => {
+
+      bulletItems.push(
+
+        cleanDescriptionText(content),
+
+      );
+
+      return "\n";
+
+    },
+
+  );
+
+  /*
+
+   * Remove list wrappers.
+
+   */
+
+  value = value
+
+    .replace(/<ul[^>]*>/gi, "")
+
+    .replace(/<\/ul>/gi, "")
+
+    .replace(/<ol[^>]*>/gi, "")
+
+    .replace(/<\/ol>/gi, "");
+
+  /*
+
+   * Remove remaining HTML.
+
+   */
+
+  const normalText =
+
+    cleanDescriptionText(value);
+
+  /*
+
+   * Convert normal paragraphs/lines.
+
+   */
+
+  const normalBlocks = normalText
+
+    .split(/\n+/)
+
+    .map((text) => text.trim())
+
+    .filter(Boolean)
+
+    .map((text) => ({
+
+      type: "text",
+
+      text,
+
+    }));
+
+  /*
+
+   * Convert bullets.
+
+   */
+
+  const bulletBlocks = bulletItems
+
+    .filter(Boolean)
+
+    .map((text) => ({
+
+      type: "bullet",
+
+      text,
+
+    }));
+
+  return [
+
+    ...normalBlocks,
+
+    ...bulletBlocks,
+
+  ];
+
+}
+
+function cleanDescriptionText(value) {
+
+  return String(value)
+
+    .replace(/<strong[^>]*>/gi, "")
+
+    .replace(/<\/strong>/gi, "")
+
+    .replace(/<b[^>]*>/gi, "")
+
+    .replace(/<\/b>/gi, "")
+
+    .replace(/<em[^>]*>/gi, "")
+
+    .replace(/<\/em>/gi, "")
+
+    .replace(/<i[^>]*>/gi, "")
+
+    .replace(/<\/i>/gi, "")
+
+    .replace(/<[^>]+>/g, "")
+
+    .replace(/&nbsp;/gi, " ")
+
+    .replace(/&amp;/gi, "&")
+
+    .replace(/&quot;/gi, '"')
+
+    .replace(/&#39;/gi, "'")
+
+    .replace(/&lt;/gi, "<")
+
+    .replace(/&gt;/gi, ">")
+
+    .replace(/[ \t]+/g, " ")
+
+    .replace(/\n[ \t]+/g, "\n")
+
+    .trim();
+
+}
+
 
 /* =========================================================
    PRICE FORMAT
