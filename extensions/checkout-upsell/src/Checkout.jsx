@@ -2,7 +2,9 @@
 import "@shopify/ui-extensions/preact";
 import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
+
 const EMPTY_ARRAY = [];
+
 const CHECKOUT_UPSELLS_METAFIELD = {
   namespace: "$app",
   key: "checkoutUpsells",
@@ -13,100 +15,62 @@ export default async () => {
 };
 
 function CheckoutUpsell() {
-
-  const [localizedPrices, setLocalizedPrices] = useState({});
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadLocalizedPrices() {
-      const products = visibleUpsells.flatMap(
-        (upsell) => upsell.recommendedProducts || []
-      );
-
-      if (products.length === 0) {
-        setLocalizedPrices({});
-        return;
-      }
-
-      const prices = await fetchLocalizedPrices(
-        products,
-        buyerCountry
-      );
-
-      if (!cancelled) {
-        setLocalizedPrices(prices);
-      }
-    }
-
-    loadLocalizedPrices();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [visibleUpsells, buyerCountry]);
-
-  const buyerCountry =
-  shopify.localization.country.value?.isoCode || "";
-  const buyerCountry =
-  shopify.localization.country.value?.isoCode || "";
-
-  const cartLines =
-
-    shopify.lines.value ?? EMPTY_ARRAY;
+  const cartLines = shopify.lines.value ?? EMPTY_ARRAY;
 
   const subtotal = Number(
-
     shopify.cost.subtotalAmount.value?.amount ?? 0,
-
   );
 
   const cartQuantity = cartLines.reduce(
-
     (total, line) =>
-
       total + Number(line.quantity ?? 0),
-
     0,
-
   );
 
+  /*
+   * Current checkout localization
+   */
+  const buyerCountry =
+    shopify.localization.country.value?.isoCode || "";
+
+  const checkoutCurrency =
+    shopify.localization.currency.value?.isoCode || "";
+
+  /*
+   * Selected upsell block
+   */
   const selectedUpsellId = String(
-
     shopify.settings.value?.upsell_id ?? "",
-
   ).trim();
 
+  /*
+   * Checkout upsell metafield
+   */
   const appMetafields =
-
     shopify.appMetafields.value ?? EMPTY_ARRAY;
 
   const checkoutUpsellsMetafield =
-
     appMetafields.find(
-
       (appMetafield) =>
-
         appMetafield?.target?.type === "shop" &&
-
         appMetafield?.metafield?.namespace ===
-
           CHECKOUT_UPSELLS_METAFIELD.namespace &&
-
         appMetafield?.metafield?.key ===
-
           CHECKOUT_UPSELLS_METAFIELD.key,
-
     );
 
   const checkoutUpsellsValue =
-
     checkoutUpsellsMetafield?.metafield?.value ?? "";
 
   const [visibleUpsells, setVisibleUpsells] =
-
     useState([]);
 
+  const [localizedPrices, setLocalizedPrices] =
+    useState({});
+
+  /*
+   * Find which upsells should currently be visible.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -162,6 +126,44 @@ function CheckoutUpsell() {
     cartQuantity,
   ]);
 
+  /*
+   * Fetch prices using the current Shopify market/country.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLocalizedPrices() {
+      const products = visibleUpsells.flatMap(
+        (upsell) =>
+          upsell.recommendedProducts || [],
+      );
+
+      if (products.length === 0) {
+        setLocalizedPrices({});
+        return;
+      }
+
+      const prices = await fetchLocalizedPrices(
+        products,
+        buyerCountry,
+      );
+
+      if (!cancelled) {
+        setLocalizedPrices(prices);
+      }
+    }
+
+    loadLocalizedPrices();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    visibleUpsells,
+    buyerCountry,
+    checkoutCurrency,
+  ]);
+
   if (visibleUpsells.length === 0) {
     return null;
   }
@@ -197,12 +199,19 @@ function CheckoutUpsell() {
   );
 }
 
-async function fetchLocalizedPrices(products, country) {
+/* =========================================================
+   LOCALIZED PRODUCT PRICES
+   ========================================================= */
+
+async function fetchLocalizedPrices(
+  products,
+  country,
+) {
   const variantIds = [
     ...new Set(
       products
         .map((product) => product.variantId)
-        .filter(Boolean)
+        .filter(Boolean),
     ),
   ];
 
@@ -212,7 +221,7 @@ async function fetchLocalizedPrices(products, country) {
 
   try {
     const query = country
-      ? `
+      ? `#graphql
         query CheckoutUpsellPrices(
           $variantIds: [ID!]!
           $country: CountryCode
@@ -228,7 +237,7 @@ async function fetchLocalizedPrices(products, country) {
           }
         }
       `
-      : `
+      : `#graphql
         query CheckoutUpsellPrices(
           $variantIds: [ID!]!
         ) {
@@ -253,15 +262,18 @@ async function fetchLocalizedPrices(products, country) {
           variantIds,
         };
 
-    const response = await shopify.query(query, {
-      variables,
-      version: "2026-04",
-    });
+    const response = await shopify.query(
+      query,
+      {
+        variables,
+        version: "2026-04",
+      },
+    );
 
     if (response?.errors?.length) {
       console.error(
         "Localized price query errors:",
-        response.errors
+        response.errors,
       );
 
       return {};
@@ -269,14 +281,17 @@ async function fetchLocalizedPrices(products, country) {
 
     const prices = {};
 
-    for (const node of response?.data?.nodes || []) {
+    for (
+      const node of response?.data?.nodes || []
+    ) {
       if (!node?.id || !node?.price) {
         continue;
       }
 
       prices[node.id] = {
         amount: Number(node.price.amount),
-        currencyCode: node.price.currencyCode,
+        currencyCode:
+          node.price.currencyCode,
       };
     }
 
@@ -284,30 +299,55 @@ async function fetchLocalizedPrices(products, country) {
   } catch (error) {
     console.error(
       "Failed to fetch localized upsell prices:",
-      error
+      error,
     );
 
     return {};
   }
 }
 
-function ProductsLayout({ upsell, cartLines, localizedPrices }) {
-  const products = upsell.recommendedProducts || [];
-  const layout = upsell.layout === "stack" ? "stack" : "grid";
+/* =========================================================
+   PRODUCTS LAYOUT
+   ========================================================= */
+
+function ProductsLayout({
+  upsell,
+  cartLines,
+  localizedPrices,
+}) {
+  const products =
+    upsell.recommendedProducts || [];
+
+  const layout =
+    upsell.layout === "stack"
+      ? "stack"
+      : "grid";
 
   if (layout === "stack") {
     return (
-      <s-scroll-box overflow="auto auto" maxBlockSize="430px" maxInlineSize="100%">
+      <s-scroll-box
+        overflow="auto auto"
+        maxBlockSize="430px"
+        maxInlineSize="100%"
+      >
         <s-stack gap="base">
           {products.map((product) => (
             <ProductCard
-              key={product.id || product.title}
-
+              key={
+                product.id ||
+                product.variantId ||
+                product.title
+              }
               product={product}
-
-              cartLine={findCartLine(product, cartLines)}
-
-              localizedPrice={localizedPrices[product.variantId]}
+              cartLine={findCartLine(
+                product,
+                cartLines,
+              )}
+              localizedPrice={
+                localizedPrices[
+                  product.variantId
+                ]
+              }
             />
           ))}
         </s-stack>
@@ -316,14 +356,32 @@ function ProductsLayout({ upsell, cartLines, localizedPrices }) {
   }
 
   return (
-    <s-scroll-box overflow="auto auto" maxBlockSize="430px" maxInlineSize="100%">
-      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">
+    <s-scroll-box
+      overflow="auto auto"
+      maxBlockSize="430px"
+      maxInlineSize="100%"
+    >
+      <s-grid
+        gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
+        gap="base"
+      >
         {products.map((product) => (
           <ProductCard
-            key={product.id || product.title}
+            key={
+              product.id ||
+              product.variantId ||
+              product.title
+            }
             product={product}
-            cartLine={findCartLine(product, cartLines)}
-            localizedPrice={localizedPrices[product.variantId]}
+            cartLine={findCartLine(
+              product,
+              cartLines,
+            )}
+            localizedPrice={
+              localizedPrices[
+                product.variantId
+              ]
+            }
           />
         ))}
       </s-grid>
@@ -331,27 +389,57 @@ function ProductsLayout({ upsell, cartLines, localizedPrices }) {
   );
 }
 
-function ProductCard({ product, cartLine, localizedPrice }) {
+/* =========================================================
+   PRODUCT CARD
+   ========================================================= */
+
+function ProductCard({
+  product,
+  cartLine,
+  localizedPrice,
+}) {
   const canAdd = Boolean(product.variantId);
   const canRemove = Boolean(cartLine?.id);
-  const productTitle = titleCase(product.title);
 
-  const modalId = `product-details-${String(product.id || product.variantId || product.title)
-    .replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+  const productTitle =
+    titleCase(product.title);
+
+  const modalId =
+    `product-details-${String(
+      product.id ||
+        product.variantId ||
+        product.title,
+    ).replace(
+      /[^a-zA-Z0-9_-]/g,
+      "-",
+    )}`;
 
   const productDescription =
-    product.description?.trim() || "No additional product details available.";
+    product.description?.trim() ||
+    "No additional product details available.";
 
   return (
     <>
-      <s-box border="base" borderRadius="base" padding="base">
+      {/* =========================================
+          PRODUCT CARD
+      ========================================= */}
+
+      <s-box
+        border="base"
+        borderRadius="base"
+        padding="base"
+      >
         <s-grid
           gridTemplateColumns={
-            product.image ? "56px 1fr auto" : "1fr auto"
+            product.image
+              ? "56px 1fr auto"
+              : "1fr auto"
           }
           gap="base"
           alignItems="center"
         >
+          {/* IMAGE */}
+
           {product.image && (
             <s-image
               src={product.image}
@@ -362,64 +450,60 @@ function ProductCard({ product, cartLine, localizedPrice }) {
             />
           )}
 
+          {/* TITLE + PRICE */}
+
           <s-stack gap="small">
-            <s-text>{productTitle}</s-text>
+            <s-text>
+              {productTitle}
+            </s-text>
 
             {localizedPrice ? (
-              <s-text>
+              <s-text type="strong">
                 {formatPrice(
                   localizedPrice.amount,
-                  localizedPrice.currencyCode
+                  localizedPrice.currencyCode,
                 )}
               </s-text>
             ) : product.price ? (
-              <s-text>
+              <s-text type="strong">
                 {product.price}
               </s-text>
             ) : null}
+          </s-stack>
 
+          {/* ADD BUTTON */}
+
+          <s-button
+            variant="primary"
+            inlineSize="fit-content"
+            command="--show"
+            commandFor={modalId}
+            disabled={!canAdd}
+          >
+            Add
+          </s-button>
+        </s-grid>
+
+        {/* OPTIONAL REMOVE */}
+        {canRemove && (
+          <s-box paddingBlockStart="small">
             <s-button
               variant="tertiary"
               inlineSize="fit-content"
-              command="--show"
-              commandFor={modalId}
+              accessibilityLabel={`Remove ${productTitle}`}
+              onClick={() =>
+                removeProduct(cartLine)
+              }
             >
-              Details
+              Remove
             </s-button>
-          </s-stack>
-
-          <s-grid
-            gridTemplateColumns="auto auto"
-            gap="small"
-            alignItems="center"
-          >
-            {canAdd && (
-              <s-button
-                variant="primary"
-                inlineSize="fit-content"
-                onClick={() =>
-                  addProduct(product.variantId)
-                }
-              >
-                Add
-              </s-button>
-            )}
-
-            {canRemove && (
-              <s-button
-                variant="tertiary"
-                inlineSize="fit-content"
-                accessibilityLabel={`Remove ${productTitle}`}
-                onClick={() =>
-                  removeProduct(cartLine)
-                }
-              >
-                ×
-              </s-button>
-            )}
-          </s-grid>
-        </s-grid>
+          </s-box>
+        )}
       </s-box>
+
+      {/* =========================================
+          CENTERED PRODUCT MODAL
+      ========================================= */}
 
       <s-modal
         id={modalId}
@@ -428,99 +512,164 @@ function ProductCard({ product, cartLine, localizedPrice }) {
       >
         <s-stack gap="base">
 
-          {product.image && (
-            <s-image
-              src={product.image}
-              alt={product.title}
-              aspectRatio={1}
-              borderRadius="base"
-            />
-          )}
+          {/* PRODUCT TITLE */}
 
-          {localizedPrice ? (
-            <s-text>
-              {formatPrice(
-                localizedPrice.amount,
-                localizedPrice.currencyCode
-              )}
-            </s-text>
-          ) : product.price ? (
-            <s-text>
-              {product.price}
-            </s-text>
-          ) : null}
+          <s-text type="strong">
+            {productTitle}
+          </s-text>
 
-          <s-stack gap="small">
-            <s-text type="strong">
-              Product Details
-            </s-text>
+          {/* DESCRIPTION */}
 
-            <s-text>
-              {productDescription}
-            </s-text>
-          </s-stack>
+          <s-text>
+            {productDescription}
+          </s-text>
 
         </s-stack>
+
+        {/* ADD TO CHECKOUT */}
 
         <s-button
           slot="primary-action"
           variant="primary"
+          disabled={!canAdd}
+          onClick={() =>
+            addProduct(product.variantId)
+          }
           command="--hide"
           commandFor={modalId}
         >
-          Close
+          Add to Checkout
         </s-button>
       </s-modal>
     </>
   );
 }
 
-function formatPrice(amount, currencyCode) {
+/* =========================================================
+   PRICE FORMAT
+   ========================================================= */
+
+function formatPrice(
+  amount,
+  currencyCode,
+) {
   try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currencyCode,
-    }).format(amount);
+    return new Intl.NumberFormat(
+      undefined,
+      {
+        style: "currency",
+        currency: currencyCode,
+      },
+    ).format(amount);
   } catch {
     return `${currencyCode} ${amount}`;
   }
 }
 
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
 function titleCase(value = "") {
   return String(value)
     .toLowerCase()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    .replace(
+      /\b\w/g,
+      (letter) => letter.toUpperCase(),
+    );
 }
 
-function findCartLine(product, cartLines) {
-  if (!product.variantId) return null;
+function findCartLine(
+  product,
+  cartLines,
+) {
+  if (!product.variantId) {
+    return null;
+  }
 
-  return cartLines.find((line) => line.merchandise?.id === product.variantId);
+  return cartLines.find(
+    (line) =>
+      line.merchandise?.id ===
+      product.variantId,
+  );
 }
 
-async function addProduct(variantId) {
-  await shopify.applyCartLinesChange({
-    type: "addCartLine",
-    merchandiseId: variantId,
-    quantity: 1,
-  });
+/* =========================================================
+   CART ACTIONS
+   ========================================================= */
+
+async function addProduct(
+  variantId,
+) {
+  if (!variantId) {
+    return;
+  }
+
+  try {
+    const result =
+      await shopify.applyCartLinesChange({
+        type: "addCartLine",
+        merchandiseId: variantId,
+        quantity: 1,
+      });
+
+    if (result?.type === "error") {
+      console.error(
+        "Failed to add upsell:",
+        result,
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Failed to add upsell product:",
+      error,
+    );
+  }
 }
 
-async function removeProduct(cartLine) {
-  await shopify.applyCartLinesChange({
-    type: "removeCartLine",
-    id: cartLine.id,
-    quantity: 1,
-  });
+async function removeProduct(
+  cartLine,
+) {
+  if (!cartLine?.id) {
+    return;
+  }
+
+  try {
+    const result =
+      await shopify.applyCartLinesChange({
+        type: "removeCartLine",
+        id: cartLine.id,
+        quantity: 1,
+      });
+
+    if (result?.type === "error") {
+      console.error(
+        "Failed to remove upsell:",
+        result,
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Failed to remove upsell product:",
+      error,
+    );
+  }
 }
 
-function parseCheckoutUpsells(value) {
+/* =========================================================
+   METAFIELD
+   ========================================================= */
+
+function parseCheckoutUpsells(
+  value,
+) {
   if (!value) {
     return [];
   }
 
   try {
-    const parsedValue = JSON.parse(value);
+    const parsedValue =
+      JSON.parse(value);
 
     return Array.isArray(parsedValue)
       ? parsedValue
@@ -535,14 +684,9 @@ function parseCheckoutUpsells(value) {
   }
 }
 
-// function shouldShowUpsell(upsell, cartLines, subtotal, cartQuantity) {
-//   if (!targetMatches(upsell, cartLines)) return false;
-//   if (!upsell.rules?.length) return true;
-
-//   return upsell.rules.every((rule) =>
-//     ruleMatches(rule, cartLines, subtotal, cartQuantity),
-//   );
-// }
+/* =========================================================
+   UPSELL VISIBILITY
+   ========================================================= */
 
 async function shouldShowUpsell(
   upsell,
@@ -550,10 +694,11 @@ async function shouldShowUpsell(
   subtotal,
   cartQuantity,
 ) {
-  const matchesTarget = await targetMatches(
-    upsell,
-    cartLines,
-  );
+  const matchesTarget =
+    await targetMatches(
+      upsell,
+      cartLines,
+    );
 
   if (!matchesTarget) {
     return false;
@@ -563,153 +708,33 @@ async function shouldShowUpsell(
     return true;
   }
 
-  return upsell.rules.every((rule) =>
-    ruleMatches(
-      rule,
-      cartLines,
-      subtotal,
-      cartQuantity,
-    ),
+  return upsell.rules.every(
+    (rule) =>
+      ruleMatches(
+        rule,
+        cartLines,
+        subtotal,
+        cartQuantity,
+      ),
   );
 }
 
-// function targetMatches(upsell, cartLines) {
-//   if (upsell.targetType !== "products") return true;
+/* =========================================================
+   TARGET MATCHING
+   ========================================================= */
 
-//   const targetProductIds = (upsell.targetProducts || []).map((product) => product.id);
-//   if (targetProductIds.length === 0) return true;
-
-//   return cartLines.some((line) =>
-//     targetProductIds.includes(line.merchandise?.product?.id),
-//   );
-// }
-
-// async function targetMatches(upsell, cartLines) {
-//   if (upsell.targetType === "all") {
-//     return true;
-//   }
-
-//   if (upsell.targetType === "products") {
-//     const targetProductIds = (
-//       upsell.targetProducts || []
-//     )
-//       .map((product) => String(product.id || ""))
-//       .filter(Boolean);
-
-//     if (targetProductIds.length === 0) {
-//       return false;
-//     }
-
-//     return cartLines.some((line) =>
-//       targetProductIds.includes(
-//         String(
-//           line.merchandise?.product?.id || "",
-//         ),
-//       ),
-//     );
-//   }
-
-//   if (upsell.targetType === "collections") {
-//     const targetCollectionIds = (
-//       upsell.targetCollections || []
-//     )
-//       .map((collection) =>
-//         String(collection.id || ""),
-//       )
-//       .filter(Boolean);
-
-//     if (targetCollectionIds.length === 0) {
-//       return false;
-//     }
-
-//     const cartProductIds = [
-//       ...new Set(
-//         cartLines
-//           .map((line) =>
-//             String(
-//               line.merchandise?.product?.id || "",
-//             ),
-//           )
-//           .filter(Boolean),
-//       ),
-//     ];
-
-//     if (cartProductIds.length === 0) {
-//       return false;
-//     }
-
-//     return cartContainsTargetCollection(
-//       cartProductIds,
-//       targetCollectionIds,
-//     );
-//   }
-
-//   return true;
-// }
-
-// async function cartContainsTargetCollection(
-//   productIds,
-//   targetCollectionIds,
-// ) {
-//   try {
-//     const response = await shopify.query(
-//       `#graphql
-//         query CheckoutUpsellProductCollections(
-//           $productIds: [ID!]!
-//         ) {
-//           nodes(ids: $productIds) {
-//             ... on Product {
-//               id
-//               collections(first: 100) {
-//                 nodes {
-//                   id
-//                 }
-//               }
-//             }
-//           }
-//         }
-//       `,
-//       {
-//         variables: {
-//           productIds,
-//         },
-//       },
-//     );
-
-//     const nodes = response?.data?.nodes || [];
-
-//     return nodes.some((product) => {
-//       const productCollectionIds =
-//         product?.collections?.nodes?.map(
-//           (collection) =>
-//             String(collection.id || ""),
-//         ) || [];
-
-//       return productCollectionIds.some(
-//         (collectionId) =>
-//           targetCollectionIds.includes(
-//             collectionId,
-//           ),
-//       );
-//     });
-//   } catch (error) {
-//     console.error(
-//       "Failed to check cart product collections:",
-//       error,
-//     );
-
-//     return false;
-//   }
-// }
-
-async function targetMatches(upsell, cartLines) {
+async function targetMatches(
+  upsell,
+  cartLines,
+) {
   const targetType = String(
     upsell.targetType || "all",
   ).toLowerCase();
 
   /*
-   * All-products targeting
+   * ALL PRODUCTS
    */
+
   if (
     targetType === "all" ||
     targetType === "allproducts" ||
@@ -719,8 +744,9 @@ async function targetMatches(upsell, cartLines) {
   }
 
   /*
-   * Specific-product targeting
+   * PRODUCTS
    */
+
   if (
     targetType === "products" ||
     targetType === "product"
@@ -738,15 +764,18 @@ async function targetMatches(upsell, cartLines) {
       )
       .filter(Boolean);
 
-    if (targetProductIds.length === 0) {
+    if (
+      targetProductIds.length === 0
+    ) {
       return false;
     }
 
     return cartLines.some((line) => {
-      const cartProductId = normalizeShopifyId(
-        line.merchandise?.product?.id,
-        "Product",
-      );
+      const cartProductId =
+        normalizeShopifyId(
+          line.merchandise?.product?.id,
+          "Product",
+        );
 
       return targetProductIds.includes(
         cartProductId,
@@ -755,8 +784,9 @@ async function targetMatches(upsell, cartLines) {
   }
 
   /*
-   * Collection targeting
+   * COLLECTIONS
    */
+
   if (
     targetType === "collections" ||
     targetType === "collection"
@@ -774,7 +804,9 @@ async function targetMatches(upsell, cartLines) {
       )
       .filter(Boolean);
 
-    if (targetCollectionIds.length === 0) {
+    if (
+      targetCollectionIds.length === 0
+    ) {
       return false;
     }
 
@@ -791,7 +823,9 @@ async function targetMatches(upsell, cartLines) {
       ),
     ];
 
-    if (cartProductIds.length === 0) {
+    if (
+      cartProductIds.length === 0
+    ) {
       return false;
     }
 
@@ -801,12 +835,12 @@ async function targetMatches(upsell, cartLines) {
     );
   }
 
-  /*
-   * Do not show an upsell when an unsupported
-   * target type is saved.
-   */
   return false;
 }
+
+/* =========================================================
+   COLLECTION MATCHING
+   ========================================================= */
 
 async function cartContainsTargetCollection(
   productIds,
@@ -815,37 +849,40 @@ async function cartContainsTargetCollection(
   if (
     !Array.isArray(productIds) ||
     productIds.length === 0 ||
-    !Array.isArray(targetCollectionIds) ||
+    !Array.isArray(
+      targetCollectionIds,
+    ) ||
     targetCollectionIds.length === 0
   ) {
     return false;
   }
 
   try {
-    const response = await shopify.query(
-      `#graphql
-        query CheckoutUpsellProductCollections(
-          $productIds: [ID!]!
-        ) {
-          nodes(ids: $productIds) {
-            ... on Product {
-              id
+    const response =
+      await shopify.query(
+        `#graphql
+          query CheckoutUpsellProductCollections(
+            $productIds: [ID!]!
+          ) {
+            nodes(ids: $productIds) {
+              ... on Product {
+                id
 
-              collections(first: 250) {
-                nodes {
-                  id
+                collections(first: 250) {
+                  nodes {
+                    id
+                  }
                 }
               }
             }
           }
-        }
-      `,
-      {
-        variables: {
-          productIds,
+        `,
+        {
+          variables: {
+            productIds,
+          },
         },
-      },
-    );
+      );
 
     if (response?.errors?.length) {
       console.error(
@@ -859,29 +896,32 @@ async function cartContainsTargetCollection(
     const products =
       response?.data?.nodes || [];
 
-    return products.some((product) => {
-      if (!product) {
-        return false;
-      }
+    return products.some(
+      (product) => {
+        if (!product) {
+          return false;
+        }
 
-      const productCollectionIds = (
-        product.collections?.nodes || []
-      )
-        .map((collection) =>
-          normalizeShopifyId(
-            collection?.id,
-            "Collection",
-          ),
+        const productCollectionIds = (
+          product.collections
+            ?.nodes || []
         )
-        .filter(Boolean);
+          .map((collection) =>
+            normalizeShopifyId(
+              collection?.id,
+              "Collection",
+            ),
+          )
+          .filter(Boolean);
 
-      return productCollectionIds.some(
-        (collectionId) =>
-          targetCollectionIds.includes(
-            collectionId,
-          ),
-      );
-    });
+        return productCollectionIds.some(
+          (collectionId) =>
+            targetCollectionIds.includes(
+              collectionId,
+            ),
+        );
+      },
+    );
   } catch (error) {
     console.error(
       "Failed to check cart product collections:",
@@ -892,8 +932,18 @@ async function cartContainsTargetCollection(
   }
 }
 
-function normalizeShopifyId(value, resourceType) {
-  if (value === null || value === undefined) {
+/* =========================================================
+   SHOPIFY ID NORMALIZATION
+   ========================================================= */
+
+function normalizeShopifyId(
+  value,
+  resourceType,
+) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
     return "";
   }
 
@@ -903,11 +953,16 @@ function normalizeShopifyId(value, resourceType) {
     return "";
   }
 
-  if (id.startsWith("gid://shopify/")) {
+  if (
+    id.startsWith(
+      "gid://shopify/",
+    )
+  ) {
     return id;
   }
 
-  const numericId = id.match(/\d+$/)?.[0];
+  const numericId =
+    id.match(/\d+$/)?.[0];
 
   if (!numericId) {
     return id;
@@ -916,33 +971,94 @@ function normalizeShopifyId(value, resourceType) {
   return `gid://shopify/${resourceType}/${numericId}`;
 }
 
-function ruleMatches(rule, cartLines, subtotal, cartQuantity) {
-  if (!rule?.value) return true;
+/* =========================================================
+   RULES
+   ========================================================= */
 
-  if (rule.condition === "cartQuantity") {
-    return compare(cartQuantity, rule.operator, Number(rule.value));
+function ruleMatches(
+  rule,
+  cartLines,
+  subtotal,
+  cartQuantity,
+) {
+  if (!rule?.value) {
+    return true;
   }
 
-  if (rule.condition === "cartTotal" || rule.condition === "minimumPurchase") {
-    return compare(subtotal, rule.operator, Number(rule.value));
-  }
-
-  if (rule.condition === "productInCart") {
-    const hasProduct = cartLines.some((line) =>
-      String(line.merchandise?.product?.id || "").includes(String(rule.value)),
+  if (
+    rule.condition ===
+    "cartQuantity"
+  ) {
+    return compare(
+      cartQuantity,
+      rule.operator,
+      Number(rule.value),
     );
+  }
 
-    return rule.operator === "excludes" ? !hasProduct : hasProduct;
+  if (
+    rule.condition ===
+      "cartTotal" ||
+    rule.condition ===
+      "minimumPurchase"
+  ) {
+    return compare(
+      subtotal,
+      rule.operator,
+      Number(rule.value),
+    );
+  }
+
+  if (
+    rule.condition ===
+    "productInCart"
+  ) {
+    const hasProduct =
+      cartLines.some((line) =>
+        String(
+          line.merchandise?.product
+            ?.id || "",
+        ).includes(
+          String(rule.value),
+        ),
+      );
+
+    return rule.operator ===
+      "excludes"
+      ? !hasProduct
+      : hasProduct;
   }
 
   return true;
 }
 
-function compare(actual, operator, expected) {
-  if (Number.isNaN(expected)) return true;
-  if (operator === "lessThan") return actual < expected;
-  if (operator === "equals") return actual === expected;
-  if (operator === "greaterThanOrEqual") return actual >= expected;
+function compare(
+  actual,
+  operator,
+  expected,
+) {
+  if (Number.isNaN(expected)) {
+    return true;
+  }
+
+  if (
+    operator === "lessThan"
+  ) {
+    return actual < expected;
+  }
+
+  if (
+    operator === "equals"
+  ) {
+    return actual === expected;
+  }
+
+  if (
+    operator ===
+    "greaterThanOrEqual"
+  ) {
+    return actual >= expected;
+  }
 
   return actual > expected;
 }
