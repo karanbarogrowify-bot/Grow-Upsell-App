@@ -326,10 +326,20 @@ function ProductsLayout({
   const products =
     upsell.recommendedProducts || [];
 
+  const layout =
+    upsell.layout === "stack"
+      ? "stack"
+      : upsell.layout === "slider"
+        ? "slider"
+        : "grid";
+
   /*
+   * =======================================================
    * STACK
+   * =======================================================
    */
-  if (upsell.layout === "stack") {
+
+  if (layout === "stack") {
     return (
       <s-scroll-box
         overflow="auto auto"
@@ -354,6 +364,9 @@ function ProductsLayout({
                   product.variantId
                 ]
               }
+              actionType={
+                upsell.actionType
+              }
             />
           ))}
         </s-stack>
@@ -362,21 +375,28 @@ function ProductsLayout({
   }
 
   /*
+   * =======================================================
    * SLIDER
+   * =======================================================
    */
-  if (upsell.layout === "slider") {
+
+  if (layout === "slider") {
     return (
-      <ProductSlider
+      <SliderLayout
         products={products}
         cartLines={cartLines}
         localizedPrices={localizedPrices}
+        actionType={upsell.actionType}
       />
     );
   }
 
   /*
-   * DEFAULT GRID
+   * =======================================================
+   * GRID
+   * =======================================================
    */
+
   return (
     <s-scroll-box
       overflow="auto auto"
@@ -404,12 +424,136 @@ function ProductsLayout({
                 product.variantId
               ]
             }
+            actionType={
+              upsell.actionType
+            }
           />
         ))}
       </s-grid>
     </s-scroll-box>
   );
 }
+
+// Slider function
+function SliderLayout({
+  products,
+  cartLines,
+  localizedPrices,
+  actionType,
+}) {
+  const PRODUCTS_PER_PAGE = 2;
+
+  const [currentPage, setCurrentPage] =
+    useState(0);
+
+  const totalPages = Math.ceil(
+    products.length /
+      PRODUCTS_PER_PAGE,
+  );
+
+  /*
+   * Reset page if products change
+   */
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [products.length]);
+
+  if (products.length === 0) {
+    return null;
+  }
+
+  const startIndex =
+    currentPage * PRODUCTS_PER_PAGE;
+
+  const visibleProducts =
+    products.slice(
+      startIndex,
+      startIndex + PRODUCTS_PER_PAGE,
+    );
+
+  const canGoPrevious =
+    currentPage > 0;
+
+  const canGoNext =
+    currentPage <
+    totalPages - 1;
+
+  return (
+    <s-stack gap="small">
+      {/* =========================================
+          TWO PRODUCTS PER VIEW
+          ========================================= */}
+
+      <s-grid
+        gridTemplateColumns="repeat(2, minmax(0, 1fr))"
+        gap="base"
+      >
+        {visibleProducts.map(
+          (product) => (
+            <ProductCard
+              key={
+                product.id ||
+                product.variantId ||
+                product.title
+              }
+              product={product}
+              cartLine={findCartLine(
+                product,
+                cartLines,
+              )}
+              localizedPrice={
+                localizedPrices[
+                  product.variantId
+                ]
+              }
+              actionType={actionType}
+            />
+          ),
+        )}
+      </s-grid>
+
+      {/* =========================================
+          ARROWS BELOW SLIDER
+          NO DOTS
+          ========================================= */}
+
+      {totalPages > 1 && (
+        <s-stack
+          direction="inline"
+          justifyContent="center"
+          gap="large"
+        >
+          <s-button
+            variant="tertiary"
+            accessibilityLabel="Previous products"
+            disabled={!canGoPrevious}
+            onClick={() =>
+              setCurrentPage(
+                (page) => page - 1,
+              )
+            }
+          >
+            ‹
+          </s-button>
+
+          <s-button
+            variant="tertiary"
+            accessibilityLabel="Next products"
+            disabled={!canGoNext}
+            onClick={() =>
+              setCurrentPage(
+                (page) => page + 1,
+              )
+            }
+          >
+            ›
+          </s-button>
+        </s-stack>
+      )}
+    </s-stack>
+  );
+}
+
 
 /* =========================================================
    PRODUCT SLIDER
@@ -683,130 +827,132 @@ function SliderProductCard({
           PRODUCT DETAILS MODAL
           ========================================= */}
 
-      <s-modal
-        id={modalId}
-        heading=""
-        size="large"
-      >
-        <s-box
-          inlineSize="100%"
-          minInlineSize="0"
-          padding="base"
-        >
-          <s-grid
-            gridTemplateColumns="
-              minmax(240px, 42%)
-              minmax(0, 58%)
-            "
-            gap="large"
-            alignItems="stretch"
+      {!isDirectAdd && (
+        <s-modal
+          id={modalId}
+          heading=""
+          size="large">
+          <s-box
+            inlineSize="100%"
+            minInlineSize="0"
+            padding="base"
           >
-            {/* =====================================
-                LEFT - PRODUCT IMAGE
-                ===================================== */}
-
-            <s-box
-              inlineSize="100%"
-              minInlineSize="0"
+            <s-grid
+              gridTemplateColumns="
+                minmax(240px, 42%)
+                minmax(0, 58%)
+              "
+              gap="large"
+              alignItems="stretch"
             >
-              {product.image ? (
-                <s-image
-                  src={product.image}
-                  alt={product.title}
-                  inlineSize="100%"
-                  aspectRatio="3/4"
-                  objectFit="cover"
-                  borderRadius="base"
-                />
-              ) : (
-                <s-box
-                  background="subdued"
-                  aspectRatio="3/4"
-                  borderRadius="base"
-                />
-              )}
-            </s-box>
+              {/* =====================================
+                  LEFT - PRODUCT IMAGE
+                  ===================================== */}
 
-            {/* =====================================
-                RIGHT - PRODUCT INFORMATION
-                ===================================== */}
-
-            <s-box
-              inlineSize="100%"
-              minInlineSize="0"
-            >
-              <s-stack
-                gap="base"
+              <s-box
                 inlineSize="100%"
                 minInlineSize="0"
               >
-                {/* TITLE */}
-
-                <s-text type="strong">
-                  {productTitle}
-                </s-text>
-
-                {/* PRICE */}
-
-                {localizedPrice ? (
-                  <s-text type="strong">
-                    {formatPrice(
-                      localizedPrice.amount,
-                      localizedPrice.currencyCode,
-                    )}
-                  </s-text>
-                ) : product.price ? (
-                  <s-text type="strong">
-                    {product.price}
-                  </s-text>
-                ) : null}
-
-                <s-divider />
-
-                {/* DESCRIPTION */}
-
-                <s-scroll-box
-                  overflow="auto"
-                  maxBlockSize="360px"
-                  inlineSize="100%"
-                >
-                  <s-box
+                {product.image ? (
+                  <s-image
+                    src={product.image}
+                    alt={product.title}
                     inlineSize="100%"
-                    minInlineSize="0"
-                    paddingBlockEnd="small"
+                    aspectRatio="3/4"
+                    objectFit="cover"
+                    borderRadius="base"
+                  />
+                ) : (
+                  <s-box
+                    background="subdued"
+                    aspectRatio="3/4"
+                    borderRadius="base"
+                  />
+                )}
+              </s-box>
+
+              {/* =====================================
+                  RIGHT - PRODUCT INFORMATION
+                  ===================================== */}
+
+              <s-box
+                inlineSize="100%"
+                minInlineSize="0"
+              >
+                <s-stack
+                  gap="base"
+                  inlineSize="100%"
+                  minInlineSize="0"
+                >
+                  {/* TITLE */}
+
+                  <s-text type="strong">
+                    {productTitle}
+                  </s-text>
+
+                  {/* PRICE */}
+
+                  {localizedPrice ? (
+                    <s-text type="strong">
+                      {formatPrice(
+                        localizedPrice.amount,
+                        localizedPrice.currencyCode,
+                      )}
+                    </s-text>
+                  ) : product.price ? (
+                    <s-text type="strong">
+                      {product.price}
+                    </s-text>
+                  ) : null}
+
+                  <s-divider />
+
+                  {/* DESCRIPTION */}
+
+                  <s-scroll-box
+                    overflow="auto"
+                    maxBlockSize="360px"
+                    inlineSize="100%"
                   >
-                    <ProductDescription
-                      description={
-                        product.description?.trim() ||
-                        "No additional product details available."
-                      }
-                    />
-                  </s-box>
-                </s-scroll-box>
-              </s-stack>
-            </s-box>
-          </s-grid>
-        </s-box>
+                    <s-box
+                      inlineSize="100%"
+                      minInlineSize="0"
+                      paddingBlockEnd="small"
+                    >
+                      <ProductDescription
+                        description={
+                          product.description?.trim() ||
+                          "No additional product details available."
+                        }
+                      />
+                    </s-box>
+                  </s-scroll-box>
+                </s-stack>
+              </s-box>
+            </s-grid>
+          </s-box>
 
-        {/* =====================================
-            MODAL ACTION
-            ===================================== */}
+          {/* =====================================
+              MODAL ACTION
+              ===================================== */}
 
-        <s-button
-          slot="primary-action"
-          variant="primary"
-          disabled={!canAdd}
-          onClick={() =>
-            addProduct(
-              product.variantId,
-            )
-          }
-          command="--hide"
-          commandFor={modalId}
-        >
-          Add to Checkout
-        </s-button>
-      </s-modal>
+          <s-button
+            slot="primary-action"
+            variant="primary"
+            disabled={!canAdd}
+            onClick={() =>
+              addProduct(
+                product.variantId,
+              )
+            }
+            command="--hide"
+            commandFor={modalId}
+          >
+            Add to Checkout
+          </s-button>
+        </s-modal>
+      )}
+
     </>
   );
 }
@@ -819,6 +965,7 @@ function ProductCard({
   product,
   cartLine,
   localizedPrice,
+  actionType,
 }) {
   const canAdd =
     Boolean(product.variantId);
@@ -828,6 +975,9 @@ function ProductCard({
 
   const productTitle =
     titleCase(product.title);
+
+  const isDirectAdd =
+    actionType === "directAdd";
 
   const modalId =
     `product-details-${String(
@@ -889,18 +1039,30 @@ function ProductCard({
             ) : null}
           </s-stack>
 
-          <s-button
-            variant="primary"
-            inlineSize="fit-content"
-            onClick={() =>
-              addProduct(
-                product.variantId,
-              )
-            }
-            disabled={!canAdd}
-          >
-            Add
-          </s-button>
+          {isDirectAdd ? (
+            <s-button
+              variant="primary"
+              inlineSize="fit-content"
+              disabled={!canAdd}
+              onClick={() =>
+                addProduct(
+                  product.variantId,
+                )
+              }
+            >
+              Add
+            </s-button>
+          ) : (
+            <s-button
+              variant="secondary"
+              inlineSize="fit-content"
+              command="--show"
+              commandFor={modalId}
+              disabled={!canAdd}
+            >
+              View details
+            </s-button>
+          )}
         </s-grid>
 
         {canRemove && (
