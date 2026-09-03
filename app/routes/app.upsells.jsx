@@ -184,7 +184,7 @@ export default function Upsells() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                     <div>
                       <label htmlFor="layout" style={{ display: "block", marginBottom: "6px", fontWeight: 600, fontSize: "13px" }}>
-                        Layout
+                        Layout Style
                       </label>
                       <select
                         id="layout"
@@ -197,7 +197,7 @@ export default function Upsells() {
                         }
                         style={fieldStyle}
                       >
-                        
+
                         <option value="grid">Grid (⊞)</option>
                         <option value="stack">Stack (≡)</option>
                         <option value="slider">Slider (‹ ›)</option>
