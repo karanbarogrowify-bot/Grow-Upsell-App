@@ -485,6 +485,7 @@ function ProductCard({
         </s-grid>
 
         {/* OPTIONAL REMOVE */}
+
         {canRemove && (
           <s-box paddingBlockStart="small">
             <s-button
@@ -502,40 +503,101 @@ function ProductCard({
       </s-box>
 
       {/* =========================================
-          CENTERED PRODUCT MODAL
+          PRODUCT DETAILS MODAL
       ========================================= */}
 
       <s-modal
         id={modalId}
-        heading={productTitle}
         size="base"
       >
-        <s-stack gap="base">
+        <s-grid
+          gridTemplateColumns={
+            product.image
+              ? "minmax(220px, 1fr) minmax(260px, 1fr)"
+              : "1fr"
+          }
+          gap="large"
+          alignItems="start"
+        >
 
-          {/* DESCRIPTION */}
+          {/* =====================================
+              LEFT — LARGE PRODUCT IMAGE
+          ===================================== */}
 
-          <ProductDescription
+          {product.image && (
+            <s-box
+              borderRadius="base"
+              overflow="hidden"
+            >
+              <s-image
+                src={product.image}
+                alt={productTitle}
+                aspectRatio={1}
+                inlineSize="100%"
+              />
+            </s-box>
+          )}
 
-            description={productDescription}
+          {/* =====================================
+              RIGHT — PRODUCT INFORMATION
+          ===================================== */}
 
-          />
+          <s-stack gap="base">
 
-        </s-stack>
+            {/* PRODUCT TITLE */}
 
-        {/* ADD TO CHECKOUT */}
+            <s-text
+              type="strong"
+            >
+              {productTitle}
+            </s-text>
+
+            {/* PRICE */}
+
+            {localizedPrice ? (
+              <s-text type="strong">
+                {formatPrice(
+                  localizedPrice.amount,
+                  localizedPrice.currencyCode,
+                )}
+              </s-text>
+            ) : product.price ? (
+              <s-text type="strong">
+                {product.price}
+              </s-text>
+            ) : null}
+
+            {/* DESCRIPTION */}
+
+            <ProductDescription
+              description={
+                productDescription
+              }
+            />
+
+          </s-stack>
+
+        </s-grid>
+
+        {/* =====================================
+            ADD TO CHECKOUT
+        ===================================== */}
 
         <s-button
           slot="primary-action"
           variant="primary"
           disabled={!canAdd}
           onClick={() =>
-            addProduct(product.variantId)
+            addProduct(
+              product.variantId,
+            )
           }
           command="--hide"
           commandFor={modalId}
         >
           Add to Checkout
         </s-button>
+
       </s-modal>
     </>
   );
