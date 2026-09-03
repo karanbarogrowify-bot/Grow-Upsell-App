@@ -175,6 +175,10 @@ function CheckoutUpsell() {
           key={String(upsell.id)}
           gap="base"
         >
+          {/* =====================================
+              UPSELL HEADING
+              ===================================== */}
+
           <s-stack gap="small">
             <s-text type="strong">
               {upsell.title ||
@@ -187,6 +191,10 @@ function CheckoutUpsell() {
               </s-text>
             )}
           </s-stack>
+
+          {/* =====================================
+              PRODUCTS
+              ===================================== */}
 
           <ProductsLayout
             upsell={upsell}
@@ -318,12 +326,10 @@ function ProductsLayout({
   const products =
     upsell.recommendedProducts || [];
 
-  const layout =
-    upsell.layout === "stack"
-      ? "stack"
-      : "grid";
-
-  if (layout === "stack") {
+  /*
+   * STACK
+   */
+  if (upsell.layout === "stack") {
     return (
       <s-scroll-box
         overflow="auto auto"
@@ -355,6 +361,22 @@ function ProductsLayout({
     );
   }
 
+  /*
+   * SLIDER
+   */
+  if (upsell.layout === "slider") {
+    return (
+      <ProductSlider
+        products={products}
+        cartLines={cartLines}
+        localizedPrices={localizedPrices}
+      />
+    );
+  }
+
+  /*
+   * DEFAULT GRID
+   */
   return (
     <s-scroll-box
       overflow="auto auto"
@@ -390,7 +412,407 @@ function ProductsLayout({
 }
 
 /* =========================================================
-   PRODUCT CARD
+   PRODUCT SLIDER
+   ========================================================= */
+
+function ProductSlider({
+  products,
+  cartLines,
+  localizedPrices,
+}) {
+  const PRODUCTS_PER_SLIDE = 2;
+
+  const totalSlides = Math.ceil(
+    products.length /
+      PRODUCTS_PER_SLIDE,
+  );
+
+  const [currentSlide, setCurrentSlide] =
+    useState(0);
+
+  /*
+   * Reset slider when product list changes.
+   */
+  useEffect(() => {
+    setCurrentSlide(0);
+  }, [products.length]);
+
+  if (products.length === 0) {
+    return null;
+  }
+
+  const startIndex =
+    currentSlide *
+    PRODUCTS_PER_SLIDE;
+
+  const visibleProducts =
+    products.slice(
+      startIndex,
+      startIndex +
+        PRODUCTS_PER_SLIDE,
+    );
+
+  const canGoPrevious =
+    currentSlide > 0;
+
+  const canGoNext =
+    currentSlide <
+    totalSlides - 1;
+
+  function goPrevious() {
+    if (!canGoPrevious) {
+      return;
+    }
+
+    setCurrentSlide(
+      (slide) => slide - 1,
+    );
+  }
+
+  function goNext() {
+    if (!canGoNext) {
+      return;
+    }
+
+    setCurrentSlide(
+      (slide) => slide + 1,
+    );
+  }
+
+  return (
+    <s-stack gap="base">
+      {/* =====================================
+          TWO PRODUCTS PER VIEW
+          ===================================== */}
+
+      <s-grid
+        gridTemplateColumns="repeat(2, minmax(0, 1fr))"
+        gap="base"
+        inlineSize="100%"
+      >
+        {visibleProducts.map(
+          (product) => (
+            <SliderProductCard
+              key={
+                product.id ||
+                product.variantId ||
+                product.title
+              }
+              product={product}
+              cartLine={findCartLine(
+                product,
+                cartLines,
+              )}
+              localizedPrice={
+                localizedPrices[
+                  product.variantId
+                ]
+              }
+            />
+          ),
+        )}
+      </s-grid>
+
+      {/* =====================================
+          NAVIGATION ARROWS
+          ===================================== */}
+
+      {totalSlides > 1 && (
+        <s-stack
+          direction="inline"
+          justifyContent="center"
+          alignItems="center"
+          gap="large"
+        >
+          <s-button
+            variant="tertiary"
+            accessibilityLabel="Previous products"
+            disabled={!canGoPrevious}
+            onClick={goPrevious}
+          >
+            ‹
+          </s-button>
+
+          <s-button
+            variant="tertiary"
+            accessibilityLabel="Next products"
+            disabled={!canGoNext}
+            onClick={goNext}
+          >
+            ›
+          </s-button>
+        </s-stack>
+      )}
+    </s-stack>
+  );
+}
+
+/* =========================================================
+   SLIDER PRODUCT CARD
+   ========================================================= */
+
+function SliderProductCard({
+  product,
+  cartLine,
+  localizedPrice,
+}) {
+  const canAdd =
+    Boolean(product.variantId);
+
+  const canRemove =
+    Boolean(cartLine?.id);
+
+  const productTitle =
+    titleCase(product.title);
+
+  const modalId =
+    `slider-product-details-${String(
+      product.id ||
+        product.variantId ||
+        product.title,
+    ).replace(
+      /[^a-zA-Z0-9_-]/g,
+      "-",
+    )}`;
+
+  return (
+    <>
+      <s-stack
+        gap="small"
+        inlineSize="100%"
+        minInlineSize="0"
+      >
+        {/* =====================================
+            PRODUCT IMAGE
+            ===================================== */}
+
+        {product.image ? (
+          <s-image
+            src={product.image}
+            alt={product.title}
+            inlineSize="100%"
+            aspectRatio="1/1"
+            objectFit="cover"
+            borderRadius="base"
+          />
+        ) : (
+          <s-box
+            inlineSize="100%"
+            aspectRatio="1/1"
+            background="subdued"
+            borderRadius="base"
+          />
+        )}
+
+        {/* =====================================
+            PRODUCT TITLE
+            ===================================== */}
+
+        <s-text>
+          {productTitle}
+        </s-text>
+
+        {/* =====================================
+            PRODUCT PRICE
+            ===================================== */}
+
+        {localizedPrice ? (
+          <s-text type="strong">
+            {formatPrice(
+              localizedPrice.amount,
+              localizedPrice.currencyCode,
+            )}
+          </s-text>
+        ) : product.price ? (
+          <s-text type="strong">
+            {product.price}
+          </s-text>
+        ) : null}
+
+        {/* =====================================
+            DIRECT ADD
+            ===================================== */}
+
+        <s-button
+          variant="secondary"
+          inlineSize="fill"
+          disabled={!canAdd}
+          onClick={() =>
+            addProduct(
+              product.variantId,
+            )
+          }
+        >
+          Add
+        </s-button>
+
+        {/* =====================================
+            DETAILS
+            ===================================== */}
+
+        <s-button
+          variant="tertiary"
+          inlineSize="fill"
+          command="--show"
+          commandFor={modalId}
+        >
+          View details →
+        </s-button>
+
+        {/* =====================================
+            REMOVE
+            ===================================== */}
+
+        {canRemove && (
+          <s-button
+            variant="tertiary"
+            inlineSize="fill"
+            accessibilityLabel={`Remove ${productTitle}`}
+            onClick={() =>
+              removeProduct(
+                cartLine,
+              )
+            }
+          >
+            Remove
+          </s-button>
+        )}
+      </s-stack>
+
+      {/* =========================================
+          PRODUCT DETAILS MODAL
+          ========================================= */}
+
+      <s-modal
+        id={modalId}
+        heading=""
+        size="large"
+      >
+        <s-box
+          inlineSize="100%"
+          minInlineSize="0"
+          padding="base"
+        >
+          <s-grid
+            gridTemplateColumns="
+              minmax(240px, 42%)
+              minmax(0, 58%)
+            "
+            gap="large"
+            alignItems="stretch"
+          >
+            {/* =====================================
+                LEFT - PRODUCT IMAGE
+                ===================================== */}
+
+            <s-box
+              inlineSize="100%"
+              minInlineSize="0"
+            >
+              {product.image ? (
+                <s-image
+                  src={product.image}
+                  alt={product.title}
+                  inlineSize="100%"
+                  aspectRatio="3/4"
+                  objectFit="cover"
+                  borderRadius="base"
+                />
+              ) : (
+                <s-box
+                  background="subdued"
+                  aspectRatio="3/4"
+                  borderRadius="base"
+                />
+              )}
+            </s-box>
+
+            {/* =====================================
+                RIGHT - PRODUCT INFORMATION
+                ===================================== */}
+
+            <s-box
+              inlineSize="100%"
+              minInlineSize="0"
+            >
+              <s-stack
+                gap="base"
+                inlineSize="100%"
+                minInlineSize="0"
+              >
+                {/* TITLE */}
+
+                <s-text type="strong">
+                  {productTitle}
+                </s-text>
+
+                {/* PRICE */}
+
+                {localizedPrice ? (
+                  <s-text type="strong">
+                    {formatPrice(
+                      localizedPrice.amount,
+                      localizedPrice.currencyCode,
+                    )}
+                  </s-text>
+                ) : product.price ? (
+                  <s-text type="strong">
+                    {product.price}
+                  </s-text>
+                ) : null}
+
+                <s-divider />
+
+                {/* DESCRIPTION */}
+
+                <s-scroll-box
+                  overflow="auto"
+                  maxBlockSize="360px"
+                  inlineSize="100%"
+                >
+                  <s-box
+                    inlineSize="100%"
+                    minInlineSize="0"
+                    paddingBlockEnd="small"
+                  >
+                    <ProductDescription
+                      description={
+                        product.description?.trim() ||
+                        "No additional product details available."
+                      }
+                    />
+                  </s-box>
+                </s-scroll-box>
+              </s-stack>
+            </s-box>
+          </s-grid>
+        </s-box>
+
+        {/* =====================================
+            MODAL ACTION
+            ===================================== */}
+
+        <s-button
+          slot="primary-action"
+          variant="primary"
+          disabled={!canAdd}
+          onClick={() =>
+            addProduct(
+              product.variantId,
+            )
+          }
+          command="--hide"
+          commandFor={modalId}
+        >
+          Add to Checkout
+        </s-button>
+      </s-modal>
+    </>
+  );
+}
+
+/* =========================================================
+   NORMAL PRODUCT CARD
    ========================================================= */
 
 function ProductCard({
@@ -398,10 +820,14 @@ function ProductCard({
   cartLine,
   localizedPrice,
 }) {
-  const canAdd = Boolean(product.variantId);
-  const canRemove = Boolean(cartLine?.id);
+  const canAdd =
+    Boolean(product.variantId);
 
-  const productTitle = titleCase(product.title);
+  const canRemove =
+    Boolean(cartLine?.id);
+
+  const productTitle =
+    titleCase(product.title);
 
   const modalId =
     `product-details-${String(
@@ -419,9 +845,6 @@ function ProductCard({
 
   return (
     <>
-      {/* =========================================
-          PRODUCT CARD
-          ========================================= */}
       <s-box
         border="base"
         borderRadius="base"
@@ -469,8 +892,11 @@ function ProductCard({
           <s-button
             variant="primary"
             inlineSize="fit-content"
-            command="--show"
-            commandFor={modalId}
+            onClick={() =>
+              addProduct(
+                product.variantId,
+              )
+            }
             disabled={!canAdd}
           >
             Add
@@ -484,7 +910,9 @@ function ProductCard({
               inlineSize="fit-content"
               accessibilityLabel={`Remove ${productTitle}`}
               onClick={() =>
-                removeProduct(cartLine)
+                removeProduct(
+                  cartLine,
+                )
               }
             >
               Remove
@@ -496,6 +924,7 @@ function ProductCard({
       {/* =========================================
           PRODUCT DETAILS MODAL
           ========================================= */}
+
       <s-modal
         id={modalId}
         heading=""
@@ -514,9 +943,6 @@ function ProductCard({
             gap="large"
             alignItems="stretch"
           >
-            {/* =====================================
-                LEFT - PRODUCT IMAGE
-                ===================================== */}
             <s-box
               inlineSize="100%"
               minInlineSize="0"
@@ -525,7 +951,7 @@ function ProductCard({
                 <s-image
                   src={product.image}
                   alt={product.title}
-                  inlineSize="fill"
+                  inlineSize="100%"
                   aspectRatio="3/4"
                   objectFit="cover"
                   borderRadius="base"
@@ -539,9 +965,6 @@ function ProductCard({
               )}
             </s-box>
 
-            {/* =====================================
-                RIGHT - PRODUCT INFORMATION
-                ===================================== */}
             <s-box
               inlineSize="100%"
               minInlineSize="0"
@@ -551,12 +974,10 @@ function ProductCard({
                 inlineSize="100%"
                 minInlineSize="0"
               >
-                {/* Product title */}
                 <s-text type="strong">
                   {productTitle}
                 </s-text>
 
-                {/* Product price */}
                 {localizedPrice ? (
                   <s-text type="strong">
                     {formatPrice(
@@ -570,10 +991,8 @@ function ProductCard({
                   </s-text>
                 ) : null}
 
-                {/* Divider */}
                 <s-divider />
 
-                {/* Description */}
                 <s-scroll-box
                   overflow="auto"
                   maxBlockSize="360px"
@@ -585,7 +1004,9 @@ function ProductCard({
                     paddingBlockEnd="small"
                   >
                     <ProductDescription
-                      description={productDescription}
+                      description={
+                        productDescription
+                      }
                     />
                   </s-box>
                 </s-scroll-box>
@@ -594,15 +1015,14 @@ function ProductCard({
           </s-grid>
         </s-box>
 
-        {/* =========================================
-            MODAL ACTION
-            ========================================= */}
         <s-button
           slot="primary-action"
           variant="primary"
           disabled={!canAdd}
           onClick={() =>
-            addProduct(product.variantId)
+            addProduct(
+              product.variantId,
+            )
           }
           command="--hide"
           commandFor={modalId}
@@ -618,12 +1038,15 @@ function ProductCard({
    PRODUCT DESCRIPTION
    ========================================================= */
 
-function ProductDescription({ description }) {
+function ProductDescription({
+  description,
+}) {
   if (!description) {
     return null;
   }
 
-  const blocks = parseDescription(description);
+  const blocks =
+    parseDescription(description);
 
   return (
     <s-stack
@@ -631,212 +1054,216 @@ function ProductDescription({ description }) {
       inlineSize="100%"
       minInlineSize="0"
     >
-      {blocks.map((block, index) => {
-        if (block.type === "bullet") {
+      {blocks.map(
+        (block, index) => {
+          if (
+            block.type ===
+            "bullet"
+          ) {
+            return (
+              <s-stack
+                key={index}
+                direction="inline"
+                gap="small"
+                inlineSize="100%"
+                minInlineSize="0"
+              >
+                <s-text>
+                  •
+                </s-text>
+
+                <s-text>
+                  {block.text}
+                </s-text>
+              </s-stack>
+            );
+          }
+
           return (
-            <s-stack
-              key={index}
-              direction="inline"
-              gap="small"
-              inlineSize="100%"
-              minInlineSize="0"
-            >
-              <s-text>•</s-text>
-
-              <s-text>
-                {block.text}
-              </s-text>
-            </s-stack>
+            <s-text key={index}>
+              {block.text}
+            </s-text>
           );
-        }
-
-        return (
-          <s-text key={index}>
-            {block.text}
-          </s-text>
-        );
-      })}
+        },
+      )}
     </s-stack>
   );
 }
 
-
 /* =========================================================
-
    DESCRIPTION PARSER
-
    ========================================================= */
 
 function parseDescription(html) {
-
   if (!html) {
-
     return [];
-
   }
 
-  let value = String(html);
-
-  /*
-
-   * Convert common HTML blocks into line breaks.
-
-   */
+  let value =
+    String(html);
 
   value = value
-
-    .replace(/<br\s*\/?>/gi, "\n")
-
-    .replace(/<\/p>/gi, "\n")
-
-    .replace(/<\/div>/gi, "\n")
-
-    .replace(/<\/h[1-6]>/gi, "\n");
-
-  /*
-
-   * Extract bullet points.
-
-   */
+    .replace(
+      /<br\s*\/?>/gi,
+      "\n",
+    )
+    .replace(
+      /<\/p>/gi,
+      "\n",
+    )
+    .replace(
+      /<\/div>/gi,
+      "\n",
+    )
+    .replace(
+      /<\/h[1-6]>/gi,
+      "\n",
+    );
 
   const bulletItems = [];
 
-  value = value.replace(
+  value =
+    value.replace(
+      /<li[^>]*>([\s\S]*?)<\/li>/gi,
+      (_, content) => {
+        bulletItems.push(
+          cleanDescriptionText(
+            content,
+          ),
+        );
 
-    /<li[^>]*>([\s\S]*?)<\/li>/gi,
-
-    (_, content) => {
-
-      bulletItems.push(
-
-        cleanDescriptionText(content),
-
-      );
-
-      return "\n";
-
-    },
-
-  );
-
-  /*
-
-   * Remove list wrappers.
-
-   */
+        return "\n";
+      },
+    );
 
   value = value
-
-    .replace(/<ul[^>]*>/gi, "")
-
-    .replace(/<\/ul>/gi, "")
-
-    .replace(/<ol[^>]*>/gi, "")
-
-    .replace(/<\/ol>/gi, "");
-
-  /*
-
-   * Remove remaining HTML.
-
-   */
+    .replace(
+      /<ul[^>]*>/gi,
+      "",
+    )
+    .replace(
+      /<\/ul>/gi,
+      "",
+    )
+    .replace(
+      /<ol[^>]*>/gi,
+      "",
+    )
+    .replace(
+      /<\/ol>/gi,
+      "",
+    );
 
   const normalText =
+    cleanDescriptionText(
+      value,
+    );
 
-    cleanDescriptionText(value);
+  const normalBlocks =
+    normalText
+      .split(/\n+/)
+      .map(
+        (text) =>
+          text.trim(),
+      )
+      .filter(Boolean)
+      .map(
+        (text) => ({
+          type: "text",
+          text,
+        }),
+      );
 
-  /*
-
-   * Convert normal paragraphs/lines.
-
-   */
-
-  const normalBlocks = normalText
-
-    .split(/\n+/)
-
-    .map((text) => text.trim())
-
-    .filter(Boolean)
-
-    .map((text) => ({
-
-      type: "text",
-
-      text,
-
-    }));
-
-  /*
-
-   * Convert bullets.
-
-   */
-
-  const bulletBlocks = bulletItems
-
-    .filter(Boolean)
-
-    .map((text) => ({
-
-      type: "bullet",
-
-      text,
-
-    }));
+  const bulletBlocks =
+    bulletItems
+      .filter(Boolean)
+      .map(
+        (text) => ({
+          type: "bullet",
+          text,
+        }),
+      );
 
   return [
-
     ...normalBlocks,
-
     ...bulletBlocks,
-
   ];
-
 }
 
-function cleanDescriptionText(value) {
-
+function cleanDescriptionText(
+  value,
+) {
   return String(value)
-
-    .replace(/<strong[^>]*>/gi, "")
-
-    .replace(/<\/strong>/gi, "")
-
-    .replace(/<b[^>]*>/gi, "")
-
-    .replace(/<\/b>/gi, "")
-
-    .replace(/<em[^>]*>/gi, "")
-
-    .replace(/<\/em>/gi, "")
-
-    .replace(/<i[^>]*>/gi, "")
-
-    .replace(/<\/i>/gi, "")
-
-    .replace(/<[^>]+>/g, "")
-
-    .replace(/&nbsp;/gi, " ")
-
-    .replace(/&amp;/gi, "&")
-
-    .replace(/&quot;/gi, '"')
-
-    .replace(/&#39;/gi, "'")
-
-    .replace(/&lt;/gi, "<")
-
-    .replace(/&gt;/gi, ">")
-
-    .replace(/[ \t]+/g, " ")
-
-    .replace(/\n[ \t]+/g, "\n")
-
+    .replace(
+      /<strong[^>]*>/gi,
+      "",
+    )
+    .replace(
+      /<\/strong>/gi,
+      "",
+    )
+    .replace(
+      /<b[^>]*>/gi,
+      "",
+    )
+    .replace(
+      /<\/b>/gi,
+      "",
+    )
+    .replace(
+      /<em[^>]*>/gi,
+      "",
+    )
+    .replace(
+      /<\/em>/gi,
+      "",
+    )
+    .replace(
+      /<i[^>]*>/gi,
+      "",
+    )
+    .replace(
+      /<\/i>/gi,
+      "",
+    )
+    .replace(
+      /<[^>]+>/g,
+      "",
+    )
+    .replace(
+      /&nbsp;/gi,
+      " ",
+    )
+    .replace(
+      /&amp;/gi,
+      "&",
+    )
+    .replace(
+      /&quot;/gi,
+      '"',
+    )
+    .replace(
+      /&#39;/gi,
+      "'",
+    )
+    .replace(
+      /&lt;/gi,
+      "<",
+    )
+    .replace(
+      /&gt;/gi,
+      ">",
+    )
+    .replace(
+      /[ \t]+/g,
+      " ",
+    )
+    .replace(
+      /\n[ \t]+/g,
+      "\n",
+    )
     .trim();
-
 }
-
 
 /* =========================================================
    PRICE FORMAT
@@ -850,8 +1277,10 @@ function formatPrice(
     return new Intl.NumberFormat(
       undefined,
       {
-        style: "currency",
-        currency: currencyCode,
+        style:
+          "currency",
+        currency:
+          currencyCode,
       },
     ).format(amount);
   } catch {
@@ -863,12 +1292,15 @@ function formatPrice(
    HELPERS
    ========================================================= */
 
-function titleCase(value = "") {
+function titleCase(
+  value = "",
+) {
   return String(value)
     .toLowerCase()
     .replace(
       /\b\w/g,
-      (letter) => letter.toUpperCase(),
+      (letter) =>
+        letter.toUpperCase(),
     );
 }
 
@@ -882,7 +1314,8 @@ function findCartLine(
 
   return cartLines.find(
     (line) =>
-      line.merchandise?.id ===
+      line.merchandise
+        ?.id ===
       product.variantId,
   );
 }
@@ -900,13 +1333,20 @@ async function addProduct(
 
   try {
     const result =
-      await shopify.applyCartLinesChange({
-        type: "addCartLine",
-        merchandiseId: variantId,
-        quantity: 1,
-      });
+      await shopify.applyCartLinesChange(
+        {
+          type:
+            "addCartLine",
+          merchandiseId:
+            variantId,
+          quantity: 1,
+        },
+      );
 
-    if (result?.type === "error") {
+    if (
+      result?.type ===
+      "error"
+    ) {
       console.error(
         "Failed to add upsell:",
         result,
@@ -929,13 +1369,19 @@ async function removeProduct(
 
   try {
     const result =
-      await shopify.applyCartLinesChange({
-        type: "removeCartLine",
-        id: cartLine.id,
-        quantity: 1,
-      });
+      await shopify.applyCartLinesChange(
+        {
+          type:
+            "removeCartLine",
+          id: cartLine.id,
+          quantity: 1,
+        },
+      );
 
-    if (result?.type === "error") {
+    if (
+      result?.type ===
+      "error"
+    ) {
       console.error(
         "Failed to remove upsell:",
         result,
@@ -964,7 +1410,9 @@ function parseCheckoutUpsells(
     const parsedValue =
       JSON.parse(value);
 
-    return Array.isArray(parsedValue)
+    return Array.isArray(
+      parsedValue,
+    )
       ? parsedValue
       : [];
   } catch (error) {
@@ -997,7 +1445,9 @@ async function shouldShowUpsell(
     return false;
   }
 
-  if (!upsell.rules?.length) {
+  if (
+    !upsell.rules?.length
+  ) {
     return true;
   }
 
@@ -1020,18 +1470,23 @@ async function targetMatches(
   upsell,
   cartLines,
 ) {
-  const targetType = String(
-    upsell.targetType || "all",
-  ).toLowerCase();
+  const targetType =
+    String(
+      upsell.targetType ||
+        "all",
+    ).toLowerCase();
 
   /*
    * ALL PRODUCTS
    */
 
   if (
-    targetType === "all" ||
-    targetType === "allproducts" ||
-    targetType === "all-products"
+    targetType ===
+      "all" ||
+    targetType ===
+      "allproducts" ||
+    targetType ===
+      "all-products"
   ) {
     return true;
   }
@@ -1041,39 +1496,48 @@ async function targetMatches(
    */
 
   if (
-    targetType === "products" ||
-    targetType === "product"
+    targetType ===
+      "products" ||
+    targetType ===
+      "product"
   ) {
-    const targetProductIds = (
-      upsell.targetProducts || []
-    )
-      .map((product) =>
-        normalizeShopifyId(
-          product?.id ||
-            product?.value ||
-            product?.admin_graphql_api_id,
-          "Product",
-        ),
+    const targetProductIds =
+      (
+        upsell.targetProducts ||
+        []
       )
-      .filter(Boolean);
+        .map((product) =>
+          normalizeShopifyId(
+            product?.id ||
+              product?.value ||
+              product?.admin_graphql_api_id,
+            "Product",
+          ),
+        )
+        .filter(Boolean);
 
     if (
-      targetProductIds.length === 0
+      targetProductIds.length ===
+      0
     ) {
       return false;
     }
 
-    return cartLines.some((line) => {
-      const cartProductId =
-        normalizeShopifyId(
-          line.merchandise?.product?.id,
-          "Product",
-        );
+    return cartLines.some(
+      (line) => {
+        const cartProductId =
+          normalizeShopifyId(
+            line.merchandise
+              ?.product
+              ?.id,
+            "Product",
+          );
 
-      return targetProductIds.includes(
-        cartProductId,
-      );
-    });
+        return targetProductIds.includes(
+          cartProductId,
+        );
+      },
+    );
   }
 
   /*
@@ -1081,24 +1545,32 @@ async function targetMatches(
    */
 
   if (
-    targetType === "collections" ||
-    targetType === "collection"
+    targetType ===
+      "collections" ||
+    targetType ===
+      "collection"
   ) {
-    const targetCollectionIds = (
-      upsell.targetCollections || []
-    )
-      .map((collection) =>
-        normalizeShopifyId(
-          collection?.id ||
-            collection?.value ||
-            collection?.admin_graphql_api_id,
-          "Collection",
-        ),
+    const targetCollectionIds =
+      (
+        upsell.targetCollections ||
+        []
       )
-      .filter(Boolean);
+        .map(
+          (
+            collection,
+          ) =>
+            normalizeShopifyId(
+              collection?.id ||
+                collection?.value ||
+                collection?.admin_graphql_api_id,
+              "Collection",
+            ),
+        )
+        .filter(Boolean);
 
     if (
-      targetCollectionIds.length === 0
+      targetCollectionIds.length ===
+      0
     ) {
       return false;
     }
@@ -1108,7 +1580,9 @@ async function targetMatches(
         cartLines
           .map((line) =>
             normalizeShopifyId(
-              line.merchandise?.product?.id,
+              line.merchandise
+                ?.product
+                ?.id,
               "Product",
             ),
           )
@@ -1117,7 +1591,8 @@ async function targetMatches(
     ];
 
     if (
-      cartProductIds.length === 0
+      cartProductIds.length ===
+      0
     ) {
       return false;
     }
@@ -1140,12 +1615,16 @@ async function cartContainsTargetCollection(
   targetCollectionIds,
 ) {
   if (
-    !Array.isArray(productIds) ||
-    productIds.length === 0 ||
+    !Array.isArray(
+      productIds,
+    ) ||
+    productIds.length ===
+      0 ||
     !Array.isArray(
       targetCollectionIds,
     ) ||
-    targetCollectionIds.length === 0
+    targetCollectionIds.length ===
+      0
   ) {
     return false;
   }
@@ -1177,7 +1656,10 @@ async function cartContainsTargetCollection(
         },
       );
 
-    if (response?.errors?.length) {
+    if (
+      response?.errors
+        ?.length
+    ) {
       console.error(
         "Collection query errors:",
         response.errors,
@@ -1187,7 +1669,8 @@ async function cartContainsTargetCollection(
     }
 
     const products =
-      response?.data?.nodes || [];
+      response?.data?.nodes ||
+      [];
 
     return products.some(
       (product) => {
@@ -1195,17 +1678,22 @@ async function cartContainsTargetCollection(
           return false;
         }
 
-        const productCollectionIds = (
-          product.collections
-            ?.nodes || []
-        )
-          .map((collection) =>
-            normalizeShopifyId(
-              collection?.id,
-              "Collection",
-            ),
+        const productCollectionIds =
+          (
+            product
+              .collections
+              ?.nodes || []
           )
-          .filter(Boolean);
+            .map(
+              (
+                collection,
+              ) =>
+                normalizeShopifyId(
+                  collection?.id,
+                  "Collection",
+                ),
+            )
+            .filter(Boolean);
 
         return productCollectionIds.some(
           (collectionId) =>
@@ -1240,7 +1728,8 @@ function normalizeShopifyId(
     return "";
   }
 
-  const id = String(value).trim();
+  const id =
+    String(value).trim();
 
   if (!id) {
     return "";
@@ -1255,7 +1744,9 @@ function normalizeShopifyId(
   }
 
   const numericId =
-    id.match(/\d+$/)?.[0];
+    id.match(
+      /\d+$/,
+    )?.[0];
 
   if (!numericId) {
     return id;
@@ -1285,7 +1776,9 @@ function ruleMatches(
     return compare(
       cartQuantity,
       rule.operator,
-      Number(rule.value),
+      Number(
+        rule.value,
+      ),
     );
   }
 
@@ -1298,7 +1791,9 @@ function ruleMatches(
     return compare(
       subtotal,
       rule.operator,
-      Number(rule.value),
+      Number(
+        rule.value,
+      ),
     );
   }
 
@@ -1307,13 +1802,17 @@ function ruleMatches(
     "productInCart"
   ) {
     const hasProduct =
-      cartLines.some((line) =>
-        String(
-          line.merchandise?.product
-            ?.id || "",
-        ).includes(
-          String(rule.value),
-        ),
+      cartLines.some(
+        (line) =>
+          String(
+            line.merchandise
+              ?.product
+              ?.id || "",
+          ).includes(
+            String(
+              rule.value,
+            ),
+          ),
       );
 
     return rule.operator ===
@@ -1330,28 +1829,41 @@ function compare(
   operator,
   expected,
 ) {
-  if (Number.isNaN(expected)) {
+  if (
+    Number.isNaN(
+      expected,
+    )
+  ) {
     return true;
   }
 
   if (
-    operator === "lessThan"
+    operator ===
+    "lessThan"
   ) {
-    return actual < expected;
+    return (
+      actual < expected
+    );
   }
 
   if (
     operator === "equals"
   ) {
-    return actual === expected;
+    return (
+      actual === expected
+    );
   }
 
   if (
     operator ===
     "greaterThanOrEqual"
   ) {
-    return actual >= expected;
+    return (
+      actual >= expected
+    );
   }
 
-  return actual > expected;
+  return (
+    actual > expected
+  );
 }
