@@ -401,8 +401,7 @@ function ProductCard({
   const canAdd = Boolean(product.variantId);
   const canRemove = Boolean(cartLine?.id);
 
-  const productTitle =
-    titleCase(product.title);
+  const productTitle = titleCase(product.title);
 
   const modalId =
     `product-details-${String(
@@ -422,8 +421,7 @@ function ProductCard({
     <>
       {/* =========================================
           PRODUCT CARD
-      ========================================= */}
-
+          ========================================= */}
       <s-box
         border="base"
         borderRadius="base"
@@ -432,25 +430,22 @@ function ProductCard({
         <s-grid
           gridTemplateColumns={
             product.image
-              ? "56px 1fr auto"
-              : "1fr auto"
+              ? "56px minmax(0, 1fr) auto"
+              : "minmax(0, 1fr) auto"
           }
           gap="base"
           alignItems="center"
         >
-          {/* IMAGE */}
-
           {product.image && (
             <s-image
               src={product.image}
               alt={product.title}
               inlineSize="56px"
-              aspectRatio={1}
+              aspectRatio="1/1"
+              objectFit="cover"
               borderRadius="base"
             />
           )}
-
-          {/* TITLE + PRICE */}
 
           <s-stack gap="small">
             <s-text>
@@ -471,8 +466,6 @@ function ProductCard({
             ) : null}
           </s-stack>
 
-          {/* ADD BUTTON */}
-
           <s-button
             variant="primary"
             inlineSize="fit-content"
@@ -484,7 +477,6 @@ function ProductCard({
           </s-button>
         </s-grid>
 
-        {/* OPTIONAL REMOVE */}
         {canRemove && (
           <s-box paddingBlockStart="small">
             <s-button
@@ -502,28 +494,109 @@ function ProductCard({
       </s-box>
 
       {/* =========================================
-          CENTERED PRODUCT MODAL
-      ========================================= */}
-
+          PRODUCT DETAILS MODAL
+          ========================================= */}
       <s-modal
         id={modalId}
-        heading={productTitle}
-        size="base"
+        heading=""
+        size="large"
       >
-        <s-stack gap="base">
+        <s-box
+          inlineSize="100%"
+          minInlineSize="0"
+          padding="base"
+        >
+          <s-grid
+            gridTemplateColumns="
+              minmax(240px, 42%)
+              minmax(0, 58%)
+            "
+            gap="large"
+            alignItems="stretch"
+          >
+            {/* =====================================
+                LEFT - PRODUCT IMAGE
+                ===================================== */}
+            <s-box
+              inlineSize="100%"
+              minInlineSize="0"
+            >
+              {product.image ? (
+                <s-image
+                  src={product.image}
+                  alt={product.title}
+                  inlineSize="fill"
+                  aspectRatio="3/4"
+                  objectFit="cover"
+                  borderRadius="base"
+                />
+              ) : (
+                <s-box
+                  background="subdued"
+                  aspectRatio="3/4"
+                  borderRadius="base"
+                />
+              )}
+            </s-box>
 
-          {/* DESCRIPTION */}
+            {/* =====================================
+                RIGHT - PRODUCT INFORMATION
+                ===================================== */}
+            <s-box
+              inlineSize="100%"
+              minInlineSize="0"
+            >
+              <s-stack
+                gap="base"
+                inlineSize="100%"
+                minInlineSize="0"
+              >
+                {/* Product title */}
+                <s-text type="strong">
+                  {productTitle}
+                </s-text>
 
-          <ProductDescription
+                {/* Product price */}
+                {localizedPrice ? (
+                  <s-text type="strong">
+                    {formatPrice(
+                      localizedPrice.amount,
+                      localizedPrice.currencyCode,
+                    )}
+                  </s-text>
+                ) : product.price ? (
+                  <s-text type="strong">
+                    {product.price}
+                  </s-text>
+                ) : null}
 
-            description={productDescription}
+                {/* Divider */}
+                <s-divider />
 
-          />
+                {/* Description */}
+                <s-scroll-box
+                  overflow="auto"
+                  maxBlockSize="360px"
+                  inlineSize="100%"
+                >
+                  <s-box
+                    inlineSize="100%"
+                    minInlineSize="0"
+                    paddingBlockEnd="small"
+                  >
+                    <ProductDescription
+                      description={productDescription}
+                    />
+                  </s-box>
+                </s-scroll-box>
+              </s-stack>
+            </s-box>
+          </s-grid>
+        </s-box>
 
-        </s-stack>
-
-        {/* ADD TO CHECKOUT */}
-
+        {/* =========================================
+            MODAL ACTION
+            ========================================= */}
         <s-button
           slot="primary-action"
           variant="primary"
@@ -546,65 +619,45 @@ function ProductCard({
    ========================================================= */
 
 function ProductDescription({ description }) {
-
   if (!description) {
-
     return null;
-
   }
 
   const blocks = parseDescription(description);
 
   return (
-
-    <s-stack gap="small">
-
+    <s-stack
+      gap="small"
+      inlineSize="100%"
+      minInlineSize="0"
+    >
       {blocks.map((block, index) => {
-
         if (block.type === "bullet") {
-
           return (
-
             <s-stack
-
               key={index}
-
               direction="inline"
-
               gap="small"
-
+              inlineSize="100%"
+              minInlineSize="0"
             >
-
               <s-text>•</s-text>
 
               <s-text>
-
                 {block.text}
-
               </s-text>
-
             </s-stack>
-
           );
-
         }
 
         return (
-
           <s-text key={index}>
-
             {block.text}
-
           </s-text>
-
         );
-
       })}
-
     </s-stack>
-
   );
-
 }
 
 
