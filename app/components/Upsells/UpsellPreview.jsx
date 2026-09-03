@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function UpsellPreview({
   layout = "grid",
@@ -12,6 +12,11 @@ export default function UpsellPreview({
 
   const [sliderPage, setSliderPage] =
     useState(0);
+
+  useEffect(() => {
+    setSelectedLayout(layout);
+    setSliderPage(0);
+  }, [layout]);
 
   const mockProducts = [
     {
