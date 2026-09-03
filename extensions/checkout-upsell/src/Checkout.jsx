@@ -62,6 +62,11 @@ function CheckoutUpsell() {
   const checkoutUpsellsValue =
     checkoutUpsellsMetafield?.metafield?.value ?? "";
 
+  console.log(
+    "GROW CHECKOUT UPSSELL DATA:",
+    checkoutUpsellsValue,
+  );
+
   const [visibleUpsells, setVisibleUpsells] =
     useState([]);
 
@@ -1084,114 +1089,134 @@ function ProductCard({
       </s-box>
 
       {/* =========================================
-          PRODUCT DETAILS MODAL
-          ========================================= */}
+    PRODUCT DETAILS MODAL
+    ========================================= */}
 
-      <s-modal
-        id={modalId}
-        heading=""
-        size="large"
-      >
+<s-modal
+  id={modalId}
+  heading=""
+  size="large"
+>
+  <s-grid
+    gridTemplateColumns="
+      minmax(240px, 42%)
+      minmax(0, 58%)
+    "
+    gap="large"
+    alignItems="stretch"
+    inlineSize="100%"
+    minInlineSize="0"
+  >
+
+    {/* =====================================
+        LEFT - PRODUCT IMAGE
+        ===================================== */}
+
+    <s-box
+      inlineSize="100%"
+      minInlineSize="0"
+    >
+      {product.image ? (
+        <s-image
+          src={product.image}
+          alt={product.title}
+          inlineSize="100%"
+          aspectRatio="3/4"
+          objectFit="cover"
+        />
+      ) : (
+        <s-box
+          background="subdued"
+          aspectRatio="3/4"
+        />
+      )}
+    </s-box>
+
+    {/* =====================================
+        RIGHT - PRODUCT INFORMATION
+        ===================================== */}
+
         <s-box
           inlineSize="100%"
           minInlineSize="0"
-          padding="base"
+          paddingBlock="large"
+          paddingInlineEnd="large"
         >
-          <s-grid
-            gridTemplateColumns="
-              minmax(240px, 42%)
-              minmax(0, 58%)
-            "
-            gap="large"
-            alignItems="stretch"
+          <s-stack
+            gap="base"
+            inlineSize="100%"
+            minInlineSize="0"
           >
-            <s-box
-              inlineSize="100%"
-              minInlineSize="0"
-            >
-              {product.image ? (
-                <s-image
-                  src={product.image}
-                  alt={product.title}
-                  inlineSize="100%"
-                  aspectRatio="3/4"
-                  objectFit="cover"
-                  borderRadius="base"
-                />
-              ) : (
-                <s-box
-                  background="subdued"
-                  aspectRatio="3/4"
-                  borderRadius="base"
-                />
-              )}
-            </s-box>
 
-            <s-box
+            {/* PRODUCT TITLE */}
+
+            <s-text type="strong">
+              {productTitle}
+            </s-text>
+
+            {/* PRICE */}
+
+            {localizedPrice ? (
+              <s-text type="strong">
+                {formatPrice(
+                  localizedPrice.amount,
+                  localizedPrice.currencyCode,
+                )}
+              </s-text>
+            ) : product.price ? (
+              <s-text type="strong">
+                {product.price}
+              </s-text>
+            ) : null}
+
+            <s-divider />
+
+            {/* DESCRIPTION */}
+
+            <s-scroll-box
+              overflow="auto"
+              maxBlockSize="360px"
               inlineSize="100%"
-              minInlineSize="0"
             >
-              <s-stack
-                gap="base"
+              <s-box
                 inlineSize="100%"
                 minInlineSize="0"
+                paddingBlockEnd="small"
               >
-                <s-text type="strong">
-                  {productTitle}
-                </s-text>
+                <ProductDescription
+                  description={
+                    productDescription
+                  }
+                />
+              </s-box>
+            </s-scroll-box>
 
-                {localizedPrice ? (
-                  <s-text type="strong">
-                    {formatPrice(
-                      localizedPrice.amount,
-                      localizedPrice.currencyCode,
-                    )}
-                  </s-text>
-                ) : product.price ? (
-                  <s-text type="strong">
-                    {product.price}
-                  </s-text>
-                ) : null}
+            {/* ADD TO CHECKOUT */}
 
-                <s-divider />
-
-                <s-scroll-box
-                  overflow="auto"
-                  maxBlockSize="360px"
-                  inlineSize="100%"
-                >
-                  <s-box
-                    inlineSize="100%"
-                    minInlineSize="0"
-                    paddingBlockEnd="small"
-                  >
-                    <ProductDescription
-                      description={
-                        productDescription
-                      }
-                    />
-                  </s-box>
-                </s-scroll-box>
-              </s-stack>
+            <s-box
+              paddingBlockStart="base"
+            >
+              <s-button
+                variant="primary"
+                disabled={!canAdd}
+                onClick={() =>
+                  addProduct(
+                    product.variantId,
+                  )
+                }
+                command="--hide"
+                commandFor={modalId}
+              >
+                Add to Checkout
+              </s-button>
             </s-box>
-          </s-grid>
+
+          </s-stack>
         </s-box>
 
-        <s-button
-          slot="primary-action"
-          variant="primary"
-          disabled={!canAdd}
-          onClick={() =>
-            addProduct(
-              product.variantId,
-            )
-          }
-          command="--hide"
-          commandFor={modalId}
-        >
-          Add to Checkout
-        </s-button>
-      </s-modal>
+      </s-grid>
+    </s-modal>
+
     </>
   );
 }
