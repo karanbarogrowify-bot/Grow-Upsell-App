@@ -1061,6 +1061,7 @@ function ProductCard({
                   >
                     <s-text
                       type="strong"
+                      inlineSize="fill"
                       alignment="center"
                     >
                       {productTitle}
@@ -1082,20 +1083,20 @@ function ProductCard({
                   ) : null}
 
                   {/* ADD BUTTON */}
-                  <s-grid
-                    gridTemplateColumns="1fr"
+                  <s-box
                     inlineSize="100%"
                     paddingInlineStart="small"
                     paddingInlineEnd="small"
                   >
                     <s-button
                       variant="secondary"
+                      inlineSize="fill"
                       disabled={!canAdd}
                       onClick={() => addProduct(product.variantId)}
                     >
                       Add
                     </s-button>
-                  </s-grid>
+                  </s-box>
 
                   {/* VIEW DETAILS */}
                   {!isDirectAdd && (
