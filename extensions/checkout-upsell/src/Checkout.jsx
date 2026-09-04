@@ -883,8 +883,8 @@ function ProductCard({
           <s-box
             inlineSize="100%"
             minInlineSize="0"
-            paddingBlock="large"
-            paddingInlineStart="large"
+            paddingBlock="small"
+            paddingInlineStart="small"
             paddingInlineEnd="large"
           >
             <s-stack
@@ -895,7 +895,9 @@ function ProductCard({
 
               {/* TITLE */}
 
-              <s-text type="strong">
+              <s-text 
+              type="strong"
+              >
                 {productTitle}
               </s-text>
 
