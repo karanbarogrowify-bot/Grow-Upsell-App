@@ -1081,7 +1081,6 @@ function ProductCard({
                     inlineSize="100%"
                     paddingInlineStart="small"
                     paddingInlineEnd="small"
-                    paddingBlockStart="small"
                   >
                     <s-button
                       variant="secondary"
