@@ -1015,36 +1015,35 @@ function ProductCard({
             /* =================================================
               SLIDER CARD
               ================================================= */
-
-            <s-stack
+          <s-stack
               gap="none"
               inlineSize="100%"
               minInlineSize="0"
+              alignItems="center"
             >
-
               {/* PRODUCT IMAGE */}
-
               {product.image ? (
                 <s-image
                   src={product.image}
                   alt={product.title}
                   inlineSize="100%"
-                  aspectRatio="6/7"
+                  aspectRatio="4/5"
                   objectFit="cover"
-                  borderRadius="base"
                 />
               ) : (
                 <s-box
                   background="subdued"
                   inlineSize="100%"
-                  aspectRatio="6/7"
+                  aspectRatio="4/5"
                 />
               )}
 
-              {/* PRODUCT INFORMATION */}
-
+              {/* PRODUCT CONTENT */}
               <s-box
-                padding="base"
+                paddingBlockStart="base"
+                paddingBlockEnd="base"
+                paddingInlineStart="base"
+                paddingInlineEnd="base"
                 inlineSize="100%"
                 minInlineSize="0"
               >
@@ -1054,9 +1053,7 @@ function ProductCard({
                   minInlineSize="0"
                   alignItems="center"
                 >
-
                   {/* TITLE */}
-
                   <s-text
                     type="strong"
                     inlineSize="100%"
@@ -1066,49 +1063,37 @@ function ProductCard({
                   </s-text>
 
                   {/* PRICE */}
-
                   {localizedPrice ? (
-                    <s-text
-                      inlineSize="100%"
-                      alignment="center"
-                    >
+                    <s-text alignment="center">
                       {formatPrice(
                         localizedPrice.amount,
-                        localizedPrice.currencyCode,
+                        localizedPrice.currencyCode
                       )}
                     </s-text>
                   ) : product.price ? (
-                    <s-text
-                      inlineSize="100%"
-                      alignment="center"
-                    >
+                    <s-text alignment="center">
                       {product.price}
                     </s-text>
                   ) : null}
 
                   {/* ADD BUTTON */}
-
                   <s-box
                     inlineSize="100%"
+                    paddingInlineStart="small"
+                    paddingInlineEnd="small"
                     paddingBlockStart="small"
-                    alignItems="center"
                   >
                     <s-button
                       variant="secondary"
                       inlineSize="100%"
                       disabled={!canAdd}
-                      onClick={() =>
-                        addProduct(
-                          product.variantId,
-                        )
-                      }
+                      onClick={() => addProduct(product.variantId)}
                     >
                       Add
                     </s-button>
                   </s-box>
 
                   {/* VIEW DETAILS */}
-
                   {!isDirectAdd && (
                     <s-link
                       command="--show"
@@ -1120,23 +1105,18 @@ function ProductCard({
                   )}
 
                   {/* REMOVE */}
-
                   {canRemove && (
                     <s-button
                       variant="tertiary"
                       inlineSize="fit-content"
                       accessibilityLabel={`Remove ${productTitle}`}
-                      onClick={() =>
-                        removeProduct(cartLine)
-                      }
+                      onClick={() => removeProduct(cartLine)}
                     >
                       Remove
                     </s-button>
                   )}
-
                 </s-stack>
               </s-box>
-
             </s-stack>
           ) : (
           /* =================================================
