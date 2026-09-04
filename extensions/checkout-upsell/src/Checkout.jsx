@@ -834,7 +834,7 @@ function ProductCard({
       <s-modal
         id={modalId}
         heading=""
-        size="max"
+        size="large-100"
         padding="none"
       >
         <s-grid
