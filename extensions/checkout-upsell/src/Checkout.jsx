@@ -369,9 +369,8 @@ function ProductsLayout({
                   product.variantId
                 ]
               }
-              actionType={
-                upsell.actionType
-              }
+              actionType={actionType}
+              layout="slider"
             />
           ))}
         </s-stack>
@@ -1092,9 +1091,10 @@ function ProductCard({
                   <s-box
                     inlineSize="100%"
                     paddingBlockStart="small"
+                    alignItems="center"
                   >
                     <s-button
-                      variant="primary"
+                      variant="secondary"
                       inlineSize="100%"
                       disabled={!canAdd}
                       onClick={() =>
@@ -1110,15 +1110,13 @@ function ProductCard({
                   {/* VIEW DETAILS */}
 
                   {!isDirectAdd && (
-                    <s-button
-                      variant="tertiary"
-                      inlineSize="fit-content"
+                    <s-link
                       command="--show"
                       commandFor={modalId}
-                      disabled={!canAdd}
+                      accessibilityLabel={`View details for ${productTitle}`}
                     >
                       View details →
-                    </s-button>
+                    </s-link>
                   )}
 
                   {/* REMOVE */}
