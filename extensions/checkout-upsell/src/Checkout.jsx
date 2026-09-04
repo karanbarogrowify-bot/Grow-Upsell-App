@@ -834,13 +834,13 @@ function ProductCard({
       <s-modal
         id={modalId}
         heading=""
-        size="large"
+        size="max"
         padding="none"
       >
         <s-grid
           gridTemplateColumns="
-            minmax(300px, 48%)
-            minmax(0, 52%)
+            minmax(0, 50%)
+            minmax(0, 50%)
           "
           gap="none"
           alignItems="stretch"
