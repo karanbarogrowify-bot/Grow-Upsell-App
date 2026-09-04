@@ -839,8 +839,8 @@ function ProductCard({
       >
         <s-grid
           gridTemplateColumns="
-            minmax(240px, 42%)
-            minmax(0, 58%)
+            minmax(300px, 48%)
+            minmax(0, 52%)
           "
           gap="none"
           alignItems="stretch"
