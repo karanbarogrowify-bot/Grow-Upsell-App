@@ -1054,19 +1054,17 @@ function ProductCard({
                   alignItems="center"
                 >
                   {/* TITLE */}
-                  <s-box
+                  <s-stack
                     inlineSize="100%"
-                    paddingInlineStart="small"
-                    paddingInlineEnd="small"
+                    alignItems="center"
                   >
                     <s-text
                       type="strong"
-                      inlineSize="fill"
                       alignment="center"
                     >
                       {productTitle}
                     </s-text>
-                  </s-box>
+                  </s-stack>
 
                   {/* PRICE */}
                   {localizedPrice ? (
