@@ -1054,13 +1054,18 @@ function ProductCard({
                   alignItems="center"
                 >
                   {/* TITLE */}
-                  <s-text
-                    type="strong"
+                  <s-box
                     inlineSize="100%"
-                    alignment="center"
+                    paddingInlineStart="small"
+                    paddingInlineEnd="small"
                   >
-                    {productTitle}
-                  </s-text>
+                    <s-text
+                      type="strong"
+                      alignment="center"
+                    >
+                      {productTitle}
+                    </s-text>
+                  </s-box>
 
                   {/* PRICE */}
                   {localizedPrice ? (
@@ -1077,20 +1082,20 @@ function ProductCard({
                   ) : null}
 
                   {/* ADD BUTTON */}
-                  <s-box
+                  <s-grid
+                    gridTemplateColumns="1fr"
                     inlineSize="100%"
                     paddingInlineStart="small"
                     paddingInlineEnd="small"
                   >
                     <s-button
                       variant="secondary"
-                      inlineSize="100%"
                       disabled={!canAdd}
                       onClick={() => addProduct(product.variantId)}
                     >
                       Add
                     </s-button>
-                  </s-box>
+                  </s-grid>
 
                   {/* VIEW DETAILS */}
                   {!isDirectAdd && (
