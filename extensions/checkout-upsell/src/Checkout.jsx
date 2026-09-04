@@ -835,13 +835,14 @@ function ProductCard({
         id={modalId}
         heading=""
         size="large"
+        padding="none"
       >
         <s-grid
           gridTemplateColumns="
             minmax(240px, 42%)
             minmax(0, 58%)
           "
-          gap="large"
+          gap="none"
           alignItems="stretch"
           inlineSize="100%"
           minInlineSize="0"
@@ -852,19 +853,22 @@ function ProductCard({
           <s-box
             inlineSize="100%"
             minInlineSize="0"
+            blockSize="100%"
           >
             {product.image ? (
               <s-image
                 src={product.image}
                 alt={product.title}
                 inlineSize="100%"
-                aspectRatio="3/4"
+                blockSize="100%"
                 objectFit="cover"
+                borderRadius="none"
               />
             ) : (
               <s-box
                 background="subdued"
-                aspectRatio="3/4"
+                inlineSize="100%"
+                blockSize="100%"
               />
             )}
           </s-box>
