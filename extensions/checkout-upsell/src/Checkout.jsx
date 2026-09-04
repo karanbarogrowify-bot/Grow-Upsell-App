@@ -1006,128 +1006,141 @@ function ProductCard({
       <s-box
         border="base"
         borderRadius="base"
-        padding={isSlider ? "none" : "base"}
+        padding="none"
+        background="base"
         inlineSize="100%"
         minInlineSize="0"
       >
 
         {isSlider ? (
-          /* =================================================
-             SLIDER CARD
-             ================================================= */
+            /* =================================================
+              SLIDER CARD
+              ================================================= */
 
-          <s-stack
-            gap="small"
-            inlineSize="100%"
-            minInlineSize="0"
-          >
-
-            {/* PRODUCT IMAGE */}
-
-            {product.image ? (
-              <s-image
-                src={product.image}
-                alt={product.title}
-                inlineSize="100%"
-                aspectRatio="6/7"
-                objectFit="cover"
-                borderRadius="base"
-              />
-            ) : (
-              <s-box
-                background="subdued"
-                inlineSize="100%"
-                aspectRatio="6/7"
-              />
-            )}
-
-            {/* PRODUCT INFORMATION */}
-
-            <s-box
-              padding="small"
+            <s-stack
+              gap="none"
               inlineSize="100%"
               minInlineSize="0"
             >
-              <s-stack
-                gap="small"
+
+              {/* PRODUCT IMAGE */}
+
+              {product.image ? (
+                <s-image
+                  src={product.image}
+                  alt={product.title}
+                  inlineSize="100%"
+                  aspectRatio="6/7"
+                  objectFit="cover"
+                  borderRadius="base"
+                />
+              ) : (
+                <s-box
+                  background="subdued"
+                  inlineSize="100%"
+                  aspectRatio="6/7"
+                />
+              )}
+
+              {/* PRODUCT INFORMATION */}
+
+              <s-box
+                padding="base"
                 inlineSize="100%"
                 minInlineSize="0"
               >
-
-                {/* TITLE */}
-
-                <s-text
-                  type="strong"
+                <s-stack
+                  gap="small"
                   inlineSize="100%"
+                  minInlineSize="0"
+                  alignItems="center"
                 >
-                  {productTitle}
-                </s-text>
 
-                {/* PRICE */}
+                  {/* TITLE */}
 
-                {localizedPrice ? (
-                  <s-text>
-                    {formatPrice(
-                      localizedPrice.amount,
-                      localizedPrice.currencyCode,
-                    )}
-                  </s-text>
-                ) : product.price ? (
-                  <s-text>
-                    {product.price}
-                  </s-text>
-                ) : null}
-
-                {/* ADD BUTTON */}
-
-                <s-button
-                  variant="primary"
-                  inlineSize="100%"
-                  disabled={!canAdd}
-                  onClick={() =>
-                    addProduct(
-                      product.variantId,
-                    )
-                  }
-                >
-                  Add
-                </s-button>
-
-                {/* VIEW DETAILS */}
-
-                {!isDirectAdd && (
-                  <s-button
-                    variant="tertiary"
+                  <s-text
+                    type="strong"
                     inlineSize="100%"
-                    command="--show"
-                    commandFor={modalId}
-                    disabled={!canAdd}
+                    alignment="center"
                   >
-                    View details →
-                  </s-button>
-                )}
+                    {productTitle}
+                  </s-text>
 
-                {/* REMOVE */}
+                  {/* PRICE */}
 
-                {canRemove && (
-                  <s-button
-                    variant="tertiary"
-                    inlineSize="fit-content"
-                    accessibilityLabel={`Remove ${productTitle}`}
-                    onClick={() =>
-                      removeProduct(
-                        cartLine,
-                      )
-                    }
+                  {localizedPrice ? (
+                    <s-text
+                      inlineSize="100%"
+                      alignment="center"
+                    >
+                      {formatPrice(
+                        localizedPrice.amount,
+                        localizedPrice.currencyCode,
+                      )}
+                    </s-text>
+                  ) : product.price ? (
+                    <s-text
+                      inlineSize="100%"
+                      alignment="center"
+                    >
+                      {product.price}
+                    </s-text>
+                  ) : null}
+
+                  {/* ADD BUTTON */}
+
+                  <s-box
+                    inlineSize="100%"
+                    paddingBlockStart="small"
                   >
-                    Remove
-                  </s-button>
-                )}
+                    <s-button
+                      variant="primary"
+                      inlineSize="100%"
+                      disabled={!canAdd}
+                      onClick={() =>
+                        addProduct(
+                          product.variantId,
+                        )
+                      }
+                    >
+                      Add
+                    </s-button>
+                  </s-box>
 
-              </s-stack>
-            </s-box>
-          </s-stack>
-        ) : (
+                  {/* VIEW DETAILS */}
+
+                  {!isDirectAdd && (
+                    <s-button
+                      variant="tertiary"
+                      inlineSize="fit-content"
+                      command="--show"
+                      commandFor={modalId}
+                      disabled={!canAdd}
+                    >
+                      View details →
+                    </s-button>
+                  )}
+
+                  {/* REMOVE */}
+
+                  {canRemove && (
+                    <s-button
+                      variant="tertiary"
+                      inlineSize="fit-content"
+                      accessibilityLabel={`Remove ${productTitle}`}
+                      onClick={() =>
+                        removeProduct(cartLine)
+                      }
+                    >
+                      Remove
+                    </s-button>
+                  )}
+
+                </s-stack>
+              </s-box>
+
+            </s-stack>
+          ) : (
           /* =================================================
              EXISTING GRID / STACK CARD
              ================================================= */
