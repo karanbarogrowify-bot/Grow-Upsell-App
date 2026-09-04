@@ -883,8 +883,9 @@ function ProductCard({
           <s-box
             inlineSize="100%"
             minInlineSize="0"
-            paddingBlock="small"
-            paddingInlineStart="small"
+            paddingBlockStart="large"
+            paddingBlockEnd="base"
+            paddingInlineStart="large"
             paddingInlineEnd="large"
           >
             <s-stack
