@@ -863,7 +863,7 @@ function ProductCard({
                 alt={product.title}
                 inlineSize="100%"
                 blockSize="100%"
-                objectFit="cover"
+                objectFit="contain"
                 borderRadius="none"
               />
             ) : (
