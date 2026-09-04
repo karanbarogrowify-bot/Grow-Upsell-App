@@ -895,11 +895,9 @@ function ProductCard({
 
               {/* TITLE */}
 
-              <s-text 
-              type="strong"
-              >
+              <s-heading>
                 {productTitle}
-              </s-text>
+              </s-heading>
 
 
               {/* PRICE */}
