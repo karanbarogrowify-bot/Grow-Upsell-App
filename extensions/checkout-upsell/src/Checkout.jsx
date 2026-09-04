@@ -848,7 +848,9 @@ function ProductCard({
           minInlineSize="0"
         >
 
-          {/* LEFT - PRODUCT IMAGE */}
+          {/* =========================================
+              LEFT - FULL BLEED PRODUCT IMAGE
+              ========================================= */}
 
           <s-box
             inlineSize="100%"
@@ -874,12 +876,15 @@ function ProductCard({
           </s-box>
 
 
-          {/* RIGHT - PRODUCT INFORMATION */}
+          {/* =========================================
+              RIGHT - PRODUCT INFORMATION
+              ========================================= */}
 
           <s-box
             inlineSize="100%"
             minInlineSize="0"
             paddingBlock="large"
+            paddingInlineStart="large"
             paddingInlineEnd="large"
           >
             <s-stack
@@ -927,9 +932,7 @@ function ProductCard({
                   paddingBlockEnd="small"
                 >
                   <ProductDescription
-                    description={
-                      productDescription
-                    }
+                    description={productDescription}
                   />
                 </s-box>
               </s-scroll-box>
@@ -960,6 +963,7 @@ function ProductCard({
 
         </s-grid>
       </s-modal>
+
     </>
   );
 }
