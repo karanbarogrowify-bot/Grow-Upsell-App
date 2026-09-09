@@ -922,6 +922,7 @@ function ProductCard({
               inlineSize="100%"
               minInlineSize="0"
               paddingBlockEnd="base"
+              paddingInlineStart="small"
             >
               {product.image ? (
                 <s-image
