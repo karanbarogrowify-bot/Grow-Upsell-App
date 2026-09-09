@@ -907,8 +907,8 @@ function ProductCard({
       >
         <s-grid
           gridTemplateColumns="
-            minmax(0, 50%)
-            minmax(0, 50%)
+            minmax(0, 40%)
+            minmax(0, 60%)
           "
           gap="none"
           alignItems="stretch"
@@ -916,9 +916,9 @@ function ProductCard({
           minInlineSize="0"
         >
 
-          {/* =========================================
-              LEFT - FULL BLEED PRODUCT IMAGE
-              ========================================= */}
+          {/* =====================================================
+              LEFT - FULL HEIGHT IMAGE
+              ===================================================== */}
 
           <s-box
             inlineSize="100%"
@@ -931,7 +931,8 @@ function ProductCard({
                 alt={product.title}
                 inlineSize="100%"
                 blockSize="100%"
-                objectFit="contain"
+                aspectRatio="auto"
+                objectFit="cover"
                 borderRadius="none"
               />
             ) : (
@@ -944,15 +945,15 @@ function ProductCard({
           </s-box>
 
 
-          {/* =========================================
+          {/* =====================================================
               RIGHT - PRODUCT INFORMATION
-              ========================================= */}
+              ===================================================== */}
 
           <s-box
             inlineSize="100%"
             minInlineSize="0"
             paddingBlockStart="large"
-            paddingBlockEnd="base"
+            paddingBlockEnd="large"
             paddingInlineStart="large"
             paddingInlineEnd="large"
           >
@@ -962,7 +963,7 @@ function ProductCard({
               minInlineSize="0"
             >
 
-              {/* TITLE */}
+              {/* PRODUCT TITLE */}
 
               <s-heading>
                 {productTitle}
@@ -985,10 +986,12 @@ function ProductCard({
               ) : null}
 
 
+              {/* DIVIDER */}
+
               <s-divider />
 
 
-              {/* DESCRIPTION */}
+              {/* PRODUCT DESCRIPTION */}
 
               <s-scroll-box
                 overflow="auto"
