@@ -194,14 +194,33 @@ function CheckoutUpsell() {
               UPSELL HEADING
               ===================================== */}
 
-          <s-stack gap="small">
-            <s-text type="strong">
-              {upsell.title ||
-                "Recommended for you"}
-            </s-text>
+          <s-stack
+            gap="small"
+            inlineSize="100%"
+          >
+            {/* HEADER TITLE WITH SIDE BORDERS */}
+            <s-grid
+              gridTemplateColumns="1fr auto 1fr"
+              gap="base"
+              alignItems="center"
+              inlineSize="100%"
+            >
+              <s-divider />
 
+              <s-text
+                type="strong"
+                alignment="center"
+              >
+                {upsell.title ||
+                  "Recommended for you"}
+              </s-text>
+
+              <s-divider />
+            </s-grid>
+
+            {/* HEADER DESCRIPTION */}
             {upsell.description && (
-              <s-text>
+              <s-text alignment="center">
                 {upsell.description}
               </s-text>
             )}
@@ -615,7 +634,6 @@ function ProductCard({
           ===================================================== */}
 
       <s-box
-        border="base"
         borderRadius="base"
         padding="none"
         background="base"
