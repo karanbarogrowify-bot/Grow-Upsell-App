@@ -907,7 +907,7 @@ function ProductCard({
       >
         <s-query-container>
           <s-grid
-            gridTemplateColumns="@container (inline-size > 700px) 43% 57%, 1fr"
+            gridTemplateColumns="@container (inline-size > 500px) 43% 57%, 1fr"
             gap="none"
             alignItems="stretch"
             inlineSize="100%"
