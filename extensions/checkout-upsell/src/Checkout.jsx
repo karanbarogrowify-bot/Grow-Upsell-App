@@ -764,7 +764,7 @@ function ProductCard({
                     </s-text>
                   ) : null}
 
-                  {/* ADD BUTTON */}
+                  {/* ADD / REMOVE BUTTON */}
                   <s-box
                     inlineSize="100%"
                     paddingInlineStart="small"
@@ -774,9 +774,15 @@ function ProductCard({
                       variant="secondary"
                       inlineSize="fill"
                       disabled={!canAdd}
-                      onClick={() => addProduct(product.variantId)}
+                      onClick={() => {
+                        if (canRemove) {
+                          removeProduct(cartLine);
+                        } else {
+                          addProduct(product.variantId);
+                        }
+                      }}
                     >
-                      Add
+                      {canRemove ? "Remove" : "Add"}
                     </s-button>
                   </s-box>
 
@@ -791,17 +797,7 @@ function ProductCard({
                     </s-link>
                   )}
 
-                  {/* REMOVE */}
-                  {canRemove && (
-                    <s-button
-                      variant="tertiary"
-                      inlineSize="fit-content"
-                      accessibilityLabel={`Remove ${productTitle}`}
-                      onClick={() => removeProduct(cartLine)}
-                    >
-                      Remove
-                    </s-button>
-                  )}
+                  
                 </s-stack>
               </s-box>
             </s-stack>
