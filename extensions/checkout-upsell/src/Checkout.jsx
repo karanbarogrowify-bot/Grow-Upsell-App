@@ -903,7 +903,7 @@ function ProductCard({
         id={modalId}
         heading=""
         size="large-100"
-        padding="none"
+        paddingBlockEnd="base"
       >
         <s-grid
           gridTemplateColumns="
