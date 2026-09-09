@@ -906,10 +906,7 @@ function ProductCard({
         paddingBlockEnd="base"
       >
         <s-grid
-          gridTemplateColumns="
-            minmax(0, 43%)
-            minmax(0, 57%)
-          "
+          gridTemplateColumns="@container (inline-size > 700px) 43% 57%, 1fr"
           gap="none"
           alignItems="stretch"
           inlineSize="100%"
