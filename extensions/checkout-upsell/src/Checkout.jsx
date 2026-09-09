@@ -907,8 +907,8 @@ function ProductCard({
       >
         <s-grid
           gridTemplateColumns="
-            minmax(0, 40%)
-            minmax(0, 60%)
+            minmax(0, 43%)
+            minmax(0, 57%)
           "
           gap="none"
           alignItems="stretch"
@@ -917,21 +917,19 @@ function ProductCard({
         >
 
           {/* =====================================================
-              LEFT - FULL HEIGHT IMAGE
+              LEFT — LARGE PORTRAIT PRODUCT IMAGE
               ===================================================== */}
 
           <s-box
             inlineSize="100%"
             minInlineSize="0"
-            blockSize="100%"
           >
             {product.image ? (
               <s-image
                 src={product.image}
                 alt={product.title}
                 inlineSize="100%"
-                blockSize="100%"
-                aspectRatio="auto"
+                aspectRatio="2/3"
                 objectFit="cover"
                 borderRadius="none"
               />
@@ -939,14 +937,14 @@ function ProductCard({
               <s-box
                 background="subdued"
                 inlineSize="100%"
-                blockSize="100%"
+                aspectRatio="2/3"
               />
             )}
           </s-box>
 
 
           {/* =====================================================
-              RIGHT - PRODUCT INFORMATION
+              RIGHT — PRODUCT INFORMATION
               ===================================================== */}
 
           <s-box
@@ -991,7 +989,7 @@ function ProductCard({
               <s-divider />
 
 
-              {/* PRODUCT DESCRIPTION */}
+              {/* DESCRIPTION */}
 
               <s-scroll-box
                 overflow="auto"
@@ -1001,7 +999,6 @@ function ProductCard({
                 <s-box
                   inlineSize="100%"
                   minInlineSize="0"
-                  paddingBlockEnd="small"
                 >
                   <ProductDescription
                     description={productDescription}
