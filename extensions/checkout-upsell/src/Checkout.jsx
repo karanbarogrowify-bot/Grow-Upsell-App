@@ -903,131 +903,127 @@ function ProductCard({
         id={modalId}
         heading=""
         size="large-100"
-        paddingBlockEnd="base"
+        padding="none"
       >
-        <s-grid
-          gridTemplateColumns="@container (inline-size > 700px) 43% 57%, 1fr"
-          gap="none"
-          alignItems="stretch"
-          inlineSize="100%"
-          minInlineSize="0"
-        >
-
-          {/* =====================================================
-              LEFT — LARGE PORTRAIT PRODUCT IMAGE
-              ===================================================== */}
-
-          <s-box
+        <s-query-container>
+          <s-grid
+            gridTemplateColumns="@container (inline-size > 700px) 43% 57%, 1fr"
+            gap="none"
+            alignItems="stretch"
             inlineSize="100%"
             minInlineSize="0"
           >
-            {product.image ? (
-              <s-image
-                src={product.image}
-                alt={product.title}
-                inlineSize="100%"
-                aspectRatio="2/3"
-                objectFit="cover"
-                borderRadius="none"
-              />
-            ) : (
-              <s-box
-                background="subdued"
-                inlineSize="100%"
-                aspectRatio="2/3"
-              />
-            )}
-          </s-box>
 
+            {/* =====================================================
+                LEFT — PRODUCT IMAGE
+                ===================================================== */}
 
-          {/* =====================================================
-              RIGHT — PRODUCT INFORMATION
-              ===================================================== */}
-
-          <s-box
-            inlineSize="100%"
-            minInlineSize="0"
-            paddingBlockStart="large"
-            paddingBlockEnd="large"
-            paddingInlineStart="large"
-            paddingInlineEnd="large"
-          >
-            <s-stack
-              gap="base"
+            <s-box
               inlineSize="100%"
               minInlineSize="0"
+              paddingBlockEnd="base"
             >
-
-              {/* PRODUCT TITLE */}
-
-              <s-heading>
-                {productTitle}
-              </s-heading>
-
-
-              {/* PRICE */}
-
-              {localizedPrice ? (
-                <s-text type="strong">
-                  {formatPrice(
-                    localizedPrice.amount,
-                    localizedPrice.currencyCode,
-                  )}
-                </s-text>
-              ) : product.price ? (
-                <s-text type="strong">
-                  {product.price}
-                </s-text>
-              ) : null}
-
-
-              {/* DIVIDER */}
-
-              <s-divider />
-
-
-              {/* DESCRIPTION */}
-
-              <s-scroll-box
-                overflow="auto"
-                maxBlockSize="360px"
-                inlineSize="100%"
-              >
-                <s-box
+              {product.image ? (
+                <s-image
+                  src={product.image}
+                  alt={product.title}
                   inlineSize="100%"
-                  minInlineSize="0"
-                >
-                  <ProductDescription
-                    description={productDescription}
-                  />
-                </s-box>
-              </s-scroll-box>
+                  aspectRatio="2/3"
+                  objectFit="cover"
+                  borderRadius="none"
+                />
+              ) : (
+                <s-box
+                  background="subdued"
+                  inlineSize="100%"
+                  aspectRatio="2/3"
+                />
+              )}
+            </s-box>
 
 
-              {/* ADD TO CHECKOUT */}
+            {/* =====================================================
+                RIGHT — PRODUCT INFORMATION
+                ===================================================== */}
 
-              <s-box
-                paddingBlockStart="base"
+            <s-box
+              inlineSize="100%"
+              minInlineSize="0"
+              paddingBlockStart="large"
+              paddingBlockEnd="large"
+              paddingInlineStart="large"
+              paddingInlineEnd="large"
+            >
+              <s-stack
+                gap="base"
+                inlineSize="100%"
+                minInlineSize="0"
               >
-                <s-button
-                  variant="primary"
-                  disabled={!canAdd}
-                  onClick={() =>
-                    addProduct(
-                      product.variantId,
-                    )
-                  }
-                  command="--hide"
-                  commandFor={modalId}
+
+                {/* PRODUCT TITLE */}
+                <s-heading>
+                  {productTitle}
+                </s-heading>
+
+
+                {/* PRICE */}
+                {localizedPrice ? (
+                  <s-text type="strong">
+                    {formatPrice(
+                      localizedPrice.amount,
+                      localizedPrice.currencyCode,
+                    )}
+                  </s-text>
+                ) : product.price ? (
+                  <s-text type="strong">
+                    {product.price}
+                  </s-text>
+                ) : null}
+
+
+                {/* DIVIDER */}
+                <s-divider />
+
+
+                {/* DESCRIPTION */}
+                <s-scroll-box
+                  overflow="auto"
+                  maxBlockSize="360px"
+                  inlineSize="100%"
                 >
-                  Add to Checkout
-                </s-button>
-              </s-box>
+                  <s-box
+                    inlineSize="100%"
+                    minInlineSize="0"
+                  >
+                    <ProductDescription
+                      description={productDescription}
+                    />
+                  </s-box>
+                </s-scroll-box>
 
-            </s-stack>
-          </s-box>
 
-        </s-grid>
+                {/* ADD TO CHECKOUT */}
+                <s-box paddingBlockStart="base">
+                  <s-button
+                    variant="primary"
+                    disabled={!canAdd}
+                    onClick={() =>
+                      addProduct(
+                        product.variantId,
+                      )
+                    }
+                    command="--hide"
+                    commandFor={modalId}
+                  >
+                    Add to Checkout
+                  </s-button>
+                </s-box>
+
+              </s-stack>
+            </s-box>
+
+          </s-grid>
+        </s-query-container>
       </s-modal>
 
     </>
