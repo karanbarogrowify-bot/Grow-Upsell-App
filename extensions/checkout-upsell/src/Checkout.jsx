@@ -508,7 +508,7 @@ function SliderLayout({
 
   return (
     <s-stack
-      gap="base"
+      gap="none"
       inlineSize="100%"
       minInlineSize="0"
     >
@@ -553,7 +553,7 @@ function SliderLayout({
           direction="inline"
           justifyContent="center"
           alignItems="center"
-          gap="large"
+          gap="base"
           inlineSize="100%"
         >
           <s-button
