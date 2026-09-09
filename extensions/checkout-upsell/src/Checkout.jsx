@@ -220,9 +220,13 @@ function CheckoutUpsell() {
 
             {/* HEADER DESCRIPTION */}
             {upsell.description && (
-              <s-text alignment="center">
-                {upsell.description}
-              </s-text>
+              <s-box
+                inlineSize="100%"
+              >
+                <s-text alignment="center">
+                  {upsell.description}
+                </s-text>
+              </s-box>
             )}
           </s-stack>
 
