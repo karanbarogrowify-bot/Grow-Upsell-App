@@ -548,7 +548,7 @@ function SliderLayout({
           SLIDER ARROWS
           ========================================= */}
 
-      {totalPages > 1 && (
+      {/* {totalPages > 1 && (
         <s-stack
           direction="inline"
           justifyContent="center"
@@ -582,7 +582,56 @@ function SliderLayout({
             ›
           </s-button>
         </s-stack>
+      )} */}
+
+      {totalPages > 1 && (
+        <s-stack
+          direction="inline"
+          justifyContent="center"
+          alignItems="center"
+          gap="large"
+          inlineSize="100%"
+        >
+          {/* PREVIOUS */}
+          <s-clickable
+            type="button"
+            accessibilityLabel="Previous products"
+            disabled={!canGoPrevious}
+            onClick={() =>
+              setCurrentPage(
+                (page) => page - 1,
+              )
+            }
+          >
+            <s-text
+              type="strong"
+              tone={canGoPrevious ? "base" : "subdued"}
+            >
+              ‹
+            </s-text>
+          </s-clickable>
+
+          {/* NEXT */}
+          <s-clickable
+            type="button"
+            accessibilityLabel="Next products"
+            disabled={!canGoNext}
+            onClick={() =>
+              setCurrentPage(
+                (page) => page + 1,
+              )
+            }
+          >
+            <s-text
+              type="strong"
+              tone={canGoNext ? "base" : "subdued"}
+            >
+              ›
+            </s-text>
+          </s-clickable>
+        </s-stack>
       )}
+
     </s-stack>
   );
 }
