@@ -915,7 +915,7 @@ function ProductCard({
           >
 
             {/* =====================================================
-                LEFT — PRODUCT IMAGE
+                IMAGE
                 ===================================================== */}
 
             <s-box
@@ -943,7 +943,7 @@ function ProductCard({
 
 
             {/* =====================================================
-                RIGHT — PRODUCT INFORMATION
+                CONTENT
                 ===================================================== */}
 
             <s-box
@@ -960,13 +960,10 @@ function ProductCard({
                 minInlineSize="0"
               >
 
-                {/* PRODUCT TITLE */}
                 <s-heading>
                   {productTitle}
                 </s-heading>
 
-
-                {/* PRICE */}
                 {localizedPrice ? (
                   <s-text type="strong">
                     {formatPrice(
@@ -980,12 +977,8 @@ function ProductCard({
                   </s-text>
                 ) : null}
 
-
-                {/* DIVIDER */}
                 <s-divider />
 
-
-                {/* DESCRIPTION */}
                 <s-scroll-box
                   overflow="auto"
                   maxBlockSize="360px"
@@ -1001,16 +994,12 @@ function ProductCard({
                   </s-box>
                 </s-scroll-box>
 
-
-                {/* ADD TO CHECKOUT */}
                 <s-box paddingBlockStart="base">
                   <s-button
                     variant="primary"
                     disabled={!canAdd}
                     onClick={() =>
-                      addProduct(
-                        product.variantId,
-                      )
+                      addProduct(product.variantId)
                     }
                     command="--hide"
                     commandFor={modalId}
