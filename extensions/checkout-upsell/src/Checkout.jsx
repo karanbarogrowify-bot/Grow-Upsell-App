@@ -530,31 +530,27 @@ function SliderLayout({
             LEFT ARROW
             ===================================== */}
 
-        {totalPages > 1 ? (
+        <s-box
+          border="base"
+          borderRadius="base"
+          padding="small"
+        >
           <s-clickable
             type="button"
             accessibilityLabel="Previous products"
             disabled={!canGoPrevious}
             onClick={() =>
-              setCurrentPage(
-                (page) => page - 1,
-              )
+              setCurrentPage((page) => page - 1)
             }
           >
             <s-text
               type="strong"
-              tone={
-                canGoPrevious
-                  ? "base"
-                  : "subdued"
-              }
+              tone={canGoPrevious ? "base" : "subdued"}
             >
               ‹
             </s-text>
           </s-clickable>
-        ) : (
-          <s-box />
-        )}
+        </s-box>
 
         {/* =====================================
             PRODUCTS
@@ -597,31 +593,27 @@ function SliderLayout({
             RIGHT ARROW
             ===================================== */}
 
-        {totalPages > 1 ? (
+        <s-box
+          border="base"
+          borderRadius="base"
+          padding="small"
+        >
           <s-clickable
             type="button"
             accessibilityLabel="Next products"
             disabled={!canGoNext}
             onClick={() =>
-              setCurrentPage(
-                (page) => page + 1,
-              )
+              setCurrentPage((page) => page + 1)
             }
           >
             <s-text
               type="strong"
-              tone={
-                canGoNext
-                  ? "base"
-                  : "subdued"
-              }
+              tone={canGoNext ? "base" : "subdued"}
             >
               ›
             </s-text>
           </s-clickable>
-        ) : (
-          <s-box />
-        )}
+        </s-box>
 
       </s-grid>
 
