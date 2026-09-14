@@ -695,14 +695,14 @@ function ProductCard({
                   src={product.image}
                   alt={product.title}
                   inlineSize="100%"
-                  aspectRatio="4/5"
+                  aspectRatio="3/5"
                   objectFit="cover"
                 />
               ) : (
                 <s-box
                   background="subdued"
                   inlineSize="100%"
-                  aspectRatio="4/5"
+                  aspectRatio="3/5"
                 />
               )}
 
