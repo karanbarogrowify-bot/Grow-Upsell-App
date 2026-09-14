@@ -642,7 +642,7 @@ function ProductCard({
     titleCase(product.title);
 
   const displayProductTitle =
-    truncateProductTitle(productTitle, 18);
+    truncateProductTitle(productTitle, 10);
 
   const isDirectAdd =
     actionType === "directAdd";
