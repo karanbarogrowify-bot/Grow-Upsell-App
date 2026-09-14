@@ -481,7 +481,8 @@ function SliderLayout({
 }) {
   const PRODUCTS_PER_PAGE = 2;
 
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] =
+    useState(0);
 
   const totalPages = Math.ceil(
     products.length / PRODUCTS_PER_PAGE,
@@ -498,13 +499,17 @@ function SliderLayout({
   const startIndex =
     currentPage * PRODUCTS_PER_PAGE;
 
-  const visibleProducts = products.slice(
-    startIndex,
-    startIndex + PRODUCTS_PER_PAGE,
-  );
+  const visibleProducts =
+    products.slice(
+      startIndex,
+      startIndex + PRODUCTS_PER_PAGE,
+    );
 
-  const canGoPrevious = currentPage > 0;
-  const canGoNext = currentPage < totalPages - 1;
+  const canGoPrevious =
+    currentPage > 0;
+
+  const canGoNext =
+    currentPage < totalPages - 1;
 
   return (
     <s-stack
@@ -513,86 +518,19 @@ function SliderLayout({
       minInlineSize="0"
     >
 
-      {/* =========================================
-          TWO PRODUCTS PER VIEW
-          ========================================= */}
-
       <s-grid
-        gridTemplateColumns="repeat(2, minmax(0, 1fr))"
-        gap="base"
+        gridTemplateColumns="24px minmax(0, 1fr) 24px"
+        gap="small"
+        alignItems="center"
         inlineSize="100%"
         minInlineSize="0"
       >
-        {visibleProducts.map((product) => (
-          <ProductCard
-            key={
-              product.id ||
-              product.variantId ||
-              product.title
-            }
-            product={product}
-            cartLine={findCartLine(
-              product,
-              cartLines,
-            )}
-            localizedPrice={
-              localizedPrices[product.variantId]
-            }
-            actionType={actionType}
-            layout="slider"
-          />
-        ))}
-      </s-grid>
 
-      {/* =========================================
-          SLIDER ARROWS
-          ========================================= */}
+        {/* =====================================
+            LEFT ARROW
+            ===================================== */}
 
-      {/* {totalPages > 1 && (
-        <s-stack
-          direction="inline"
-          justifyContent="center"
-          alignItems="center"
-          gap="base"
-          inlineSize="100%"
-        >
-          <s-button
-            variant="tertiary"
-            accessibilityLabel="Previous products"
-            disabled={!canGoPrevious}
-            onClick={() =>
-              setCurrentPage(
-                (page) => page - 1,
-              )
-            }
-          >
-            ‹
-          </s-button>
-
-          <s-button
-            variant="tertiary"
-            accessibilityLabel="Next products"
-            disabled={!canGoNext}
-            onClick={() =>
-              setCurrentPage(
-                (page) => page + 1,
-              )
-            }
-          >
-            ›
-          </s-button>
-        </s-stack>
-      )} */}
-
-      {totalPages > 1 && (
-        <s-stack
-          direction="inline"
-          justifyContent="center"
-          alignItems="center"
-          gap="large"
-          inlineSize="100%"
-        >
-          {/* PREVIOUS */}
+        {totalPages > 1 ? (
           <s-clickable
             type="button"
             accessibilityLabel="Previous products"
@@ -605,13 +543,61 @@ function SliderLayout({
           >
             <s-text
               type="strong"
-              tone={canGoPrevious ? "base" : "subdued"}
+              tone={
+                canGoPrevious
+                  ? "base"
+                  : "subdued"
+              }
             >
               ‹
             </s-text>
           </s-clickable>
+        ) : (
+          <s-box />
+        )}
 
-          {/* NEXT */}
+        {/* =====================================
+            PRODUCTS
+            ===================================== */}
+
+        <s-grid
+          gridTemplateColumns="repeat(2, minmax(0, 1fr))"
+          gap="base"
+          inlineSize="100%"
+          minInlineSize="0"
+        >
+          {visibleProducts.map(
+            (product) => (
+              <ProductCard
+                key={
+                  product.id ||
+                  product.variantId ||
+                  product.title
+                }
+                product={product}
+                cartLine={findCartLine(
+                  product,
+                  cartLines,
+                )}
+                localizedPrice={
+                  localizedPrices[
+                    product.variantId
+                  ]
+                }
+                actionType={
+                  actionType
+                }
+                layout="slider"
+              />
+            ),
+          )}
+        </s-grid>
+
+        {/* =====================================
+            RIGHT ARROW
+            ===================================== */}
+
+        {totalPages > 1 ? (
           <s-clickable
             type="button"
             accessibilityLabel="Next products"
@@ -624,18 +610,24 @@ function SliderLayout({
           >
             <s-text
               type="strong"
-              tone={canGoNext ? "base" : "subdued"}
+              tone={
+                canGoNext
+                  ? "base"
+                  : "subdued"
+              }
             >
               ›
             </s-text>
           </s-clickable>
-        </s-stack>
-      )}
+        ) : (
+          <s-box />
+        )}
+
+      </s-grid>
 
     </s-stack>
   );
 }
-
 
 /* =========================================================
    NORMAL PRODUCT CARD
