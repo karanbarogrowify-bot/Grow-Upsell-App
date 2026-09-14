@@ -721,14 +721,16 @@ function ProductCard({
                   minInlineSize="0"
                   alignItems="center"
                 >
-                  {/* TITLE */}
+                  {/* TITLE - ONE LINE ONLY */}
                   <s-stack
                     inlineSize="100%"
+                    minInlineSize="0"
                     alignItems="center"
                   >
                     <s-text
                       type="strong"
                       alignment="center"
+                      inlineSize="100%"
                     >
                       {displayProductTitle}
                     </s-text>
