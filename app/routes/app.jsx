@@ -11,15 +11,17 @@ import {
 } from "../services/messages.server";
 import { loadDashboardDiscounts } from "../services/discounts.server";
 import { loadDashboardUpsells } from "../services/upsells.server";
+import { loadThankYouCampaigns } from "../services/thankyou.server";
 
 /* global process */
 
 export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);
-  const [messages, discounts, upsells] = await Promise.all([
+  const [messages, discounts, upsells, thankYouCampaigns] = await Promise.all([
     loadDashboardMessages(admin, session.shop),
     loadDashboardDiscounts(admin),
     loadDashboardUpsells(admin),
+    loadThankYouCampaigns(admin),
   ]);
   await syncMessagesMetafields(admin, session.shop, messages);
 
@@ -29,6 +31,7 @@ export const loader = async ({ request }) => {
     messages,
     discounts,
     upsells,
+    thankYouCampaigns,
   };
 };
 
@@ -39,6 +42,7 @@ export default function App() {
     messages: initialMessages,
     discounts: initialDiscounts,
     upsells: initialUpsells,
+    thankYouCampaigns: initialThankYouCampaigns,
   } = useLoaderData();
   const syncDiscounts = useCallback(async (nextDiscounts) => {
     try {
@@ -72,6 +76,10 @@ export default function App() {
   const upsellState = useUpsells({ initialUpsells, onChange: syncUpsells });
   const [messages, setMessages] = useState(initialMessages);
 
+  const [thankYouCampaigns, setThankYouCampaigns] = useState(
+    initialThankYouCampaigns,
+  );
+
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
@@ -88,6 +96,8 @@ export default function App() {
           messages,
           setMessages,
           shop,
+          thankYouCampaigns,
+          setThankYouCampaigns,
           ...discountState,
           ...upsellState,
         }}
