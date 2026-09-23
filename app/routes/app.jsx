@@ -87,6 +87,7 @@ export default function App() {
         <s-link href="/app/messages">Checkout Messages</s-link>
         <s-link href="/app/discounts">Discounts</s-link>
         <s-link href="/app/upsells">Upsells</s-link>
+        <s-link href="/app/thank-you">Thank You Page</s-link>
         <s-link href="/app/analytics">Analytics</s-link>
         <s-link href="/app/settings">Settings</s-link>
       </s-app-nav>
