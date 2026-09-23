@@ -65,7 +65,11 @@ const DEFAULT_CAMPAIGN = {
 };
 
 export default function ThankYou() {
-  const { thankYouCampaigns = [] } = useOutletContext();
+
+    const {
+    thankYouCampaigns = [],
+    setThankYouCampaigns,
+    } = useOutletContext();
 
   const [showCampaignSelector, setShowCampaignSelector] = useState(false);
 
@@ -76,6 +80,9 @@ export default function ThankYou() {
 
   const [editingCampaignId, setEditingCampaignId] =
     useState(null);
+
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState("");
 
   const hasCampaigns = thankYouCampaigns.length > 0;
 
@@ -111,37 +118,80 @@ export default function ThankYou() {
     }));
   };
 
-  const handleSaveCampaign = (event) => {
+  const handleSaveCampaign = async (event) => {
     event.preventDefault();
 
+    setSaveError("");
+
     if (!campaignForm.title.trim()) {
-      alert("Please enter a campaign name.");
-      return;
+        setSaveError("Please enter a campaign name.");
+        return;
     }
 
     if (!campaignForm.heading.trim()) {
-      alert("Please enter a customer-facing heading.");
-      return;
+        setSaveError("Please enter a customer-facing heading.");
+        return;
     }
 
-    const campaign = {
-      ...campaignForm,
-      id:
-        editingCampaignId ||
-        `thank-you-${Date.now()}`,
+    try {
+        setIsSaving(true);
+
+        const campaign = {
+        ...campaignForm,
+        id:
+            editingCampaignId ||
+            `thank-you-${Date.now()}`,
+        type: "nextPurchaseOffer",
+        };
+
+        const nextCampaigns = editingCampaignId
+        ? thankYouCampaigns.map((item) =>
+            item.id === editingCampaignId
+                ? campaign
+                : item,
+            )
+        : [...thankYouCampaigns, campaign];
+
+        const response = await fetch("/api/thank-you", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            campaigns: nextCampaigns,
+        }),
+        });
+
+        const result = await response.json().catch(() => null);
+
+        if (!response.ok || !result?.ok) {
+        throw new Error(
+            result?.error ||
+            `Failed to save campaign (${response.status})`,
+        );
+        }
+
+        setThankYouCampaigns(
+        result.campaigns || nextCampaigns,
+        );
+
+        setShowCampaignEditor(false);
+        setEditingCampaignId(null);
+        setCampaignForm(DEFAULT_CAMPAIGN);
+    } catch (error) {
+        console.error(
+        "Failed to save Thank You campaign:",
+        error,
+        );
+
+        setSaveError(
+        error?.message ||
+            "Failed to save campaign. Please try again.",
+        );
+    } finally {
+        setIsSaving(false);
+    }
     };
-
-    console.log(
-      "Thank You campaign ready to save:",
-      campaign,
-    );
-
-    alert(
-      "Campaign form is ready. We will connect the Save button to Shopify in the next step.",
-    );
-
-    closeCampaignEditor();
-  };
 
   return (
     <div style={{ padding: "24px" }}>
@@ -1431,6 +1481,22 @@ export default function ThankYou() {
                 </div>
               </div>
 
+              {saveError && (
+                <div
+                    style={{
+                    marginTop: "20px",
+                    padding: "12px 14px",
+                    borderRadius: "8px",
+                    background: "#fff4f4",
+                    border: "1px solid #f0b8b8",
+                    color: "#b42318",
+                    fontSize: "13px",
+                    }}
+                >
+                    {saveError}
+                </div>
+              )}
+           
               {/* FORM ACTIONS */}
               <div
                 style={{
@@ -1468,24 +1534,19 @@ export default function ThankYou() {
                 </button>
 
                 <button
-                  type="submit"
-                  style={{
-                    padding:
-                      "10px 18px",
+                type="submit"
+                disabled={isSaving}
+                style={{
+                    padding: "10px 18px",
                     border: "none",
-                    borderRadius:
-                      "8px",
-                    background:
-                      "#303030",
-                    color:
-                      "#fff",
-                    cursor:
-                      "pointer",
-                    fontWeight:
-                      "600",
-                  }}
+                    borderRadius: "8px",
+                    background: isSaving ? "#8c9196" : "#303030",
+                    color: "#fff",
+                    cursor: isSaving ? "not-allowed" : "pointer",
+                    fontWeight: "600",
+                }}
                 >
-                  Save Campaign
+                {isSaving ? "Saving..." : "Save Campaign"}
                 </button>
               </div>
             </form>
