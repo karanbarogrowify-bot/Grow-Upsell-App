@@ -51,41 +51,131 @@ export async function readShopJsonMetafield(admin, metafield, fallback = []) {
   }
 }
 
+// export async function setShopJsonMetafields(admin, metafields) {
+//   const ownerId = await getCurrentShopId(admin);
+//   const metafieldResponse = await admin.graphql(
+//     `#graphql
+//       mutation SetShopJsonMetafields($metafields: [MetafieldsSetInput!]!) {
+//         metafieldsSet(metafields: $metafields) {
+//           metafields {
+//             id
+//             namespace
+//             key
+//           }
+//           userErrors {
+//             field
+//             message
+//           }
+//         }
+//       }
+//     `,
+//     {
+//       variables: {
+//         metafields: metafields.map((metafield) => ({
+//           ownerId,
+//           namespace: metafield.namespace,
+//           key: metafield.key,
+//           type: "json",
+//           value: JSON.stringify(metafield.value),
+//         })),
+//       },
+//     },
+//   );
+//   const metafieldBody = await metafieldResponse.json();
+//   const errors = metafieldBody.data?.metafieldsSet?.userErrors ?? [];
+
+//   if (errors.length > 0) {
+//     throw new Error(errors.map((error) => error.message).join(", "));
+//   }
+
+//   return metafields;
+// }
+
 export async function setShopJsonMetafields(admin, metafields) {
   const ownerId = await getCurrentShopId(admin);
+
+  const input = metafields.map((metafield) => ({
+    ownerId,
+    namespace: metafield.namespace,
+    key: metafield.key,
+    type: "json",
+    value: JSON.stringify(metafield.value),
+  }));
+
+  console.log(
+    "SET SHOP METAFIELDS INPUT:",
+    JSON.stringify(input, null, 2),
+  );
+
   const metafieldResponse = await admin.graphql(
     `#graphql
-      mutation SetShopJsonMetafields($metafields: [MetafieldsSetInput!]!) {
+      mutation SetShopJsonMetafields(
+        $metafields: [MetafieldsSetInput!]!
+      ) {
         metafieldsSet(metafields: $metafields) {
           metafields {
             id
             namespace
             key
+            type
+            value
           }
           userErrors {
             field
             message
+            code
           }
         }
       }
     `,
     {
       variables: {
-        metafields: metafields.map((metafield) => ({
-          ownerId,
-          namespace: metafield.namespace,
-          key: metafield.key,
-          type: "json",
-          value: JSON.stringify(metafield.value),
-        })),
+        metafields: input,
       },
     },
   );
-  const metafieldBody = await metafieldResponse.json();
-  const errors = metafieldBody.data?.metafieldsSet?.userErrors ?? [];
 
-  if (errors.length > 0) {
-    throw new Error(errors.map((error) => error.message).join(", "));
+  const metafieldBody = await metafieldResponse.json();
+
+  console.log(
+    "SHOPIFY METAFIELDS RESPONSE:",
+    JSON.stringify(metafieldBody, null, 2),
+  );
+
+  // GraphQL-level errors
+  if (metafieldBody.errors?.length) {
+    throw new Error(
+      metafieldBody.errors
+        .map((error) => error.message)
+        .join(", "),
+    );
+  }
+
+  const result = metafieldBody.data?.metafieldsSet;
+
+  if (!result) {
+    throw new Error(
+      "Shopify did not return a metafieldsSet response.",
+    );
+  }
+
+  // Shopify user errors
+  if (result.userErrors?.length) {
+    throw new Error(
+      result.userErrors
+        .map((error) => {
+          const field = error.field?.length
+            ? ` [${error.field.join(".")}]`
+            : "";
+
+          const code = error.code
+            ? ` (${error.code})`
+            : "";
+
+          return `${error.message}${field}${code}`;
+        })
+        .join(", "),
+    );
   }
 
   return metafields;
