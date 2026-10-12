@@ -3,6 +3,25 @@ query CartTransformRunInput {
     lines {
       id
       quantity
+      cost {
+        amountPerQuantity {
+          amount
+          currencyCode
+        }
+      }
+      merchandise {
+        ... on ProductVariant {
+          product {
+            id
+          }
+        }
+      }
+    }
+  }
+
+  cartTransform {
+    metafield(namespace: "$app", key: "checkoutPriceAdjustments") {
+      value
     }
   }
 }
