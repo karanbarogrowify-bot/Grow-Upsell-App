@@ -12,6 +12,7 @@ export default function PriceAdjustmentsPage() {
   const [editingRule, setEditingRule] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [sync, setSync] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -37,6 +38,8 @@ export default function PriceAdjustmentsPage() {
           collectionsData.error || "Failed to load collections.",
         );
       }
+
+      setSync(rulesData.sync || null);
 
       const availableCollections = collectionsData.collections || [];
       setCollections(availableCollections);
@@ -72,6 +75,8 @@ export default function PriceAdjustmentsPage() {
     if (!response.ok || !data.ok) {
       throw new Error(data.error || "Failed to save price adjustment rules.");
     }
+
+    setSync(data.sync || null);
 
     setRules(
       (data.rules || []).map((rule) => ({
@@ -190,6 +195,36 @@ export default function PriceAdjustmentsPage() {
               setError("");
             }}
           />
+        </s-section>
+      )}
+
+      {sync && !loading && (
+        <s-section heading="Checkout status">
+          {!sync.registered ? (
+            <s-banner tone="warning">
+              The checkout price function is not registered yet. Save a rule
+              to register it.
+            </s-banner>
+          ) : sync.rules.length === 0 ? (
+            <s-paragraph>
+              No active rules are applied at checkout. Rules must be Active
+              and have a checkout message.
+            </s-paragraph>
+          ) : (
+            <s-stack gap="small">
+              {sync.rules.map((rule) => (
+                <s-banner
+                  key={rule.id}
+                  tone={rule.productCount > 0 ? "success" : "warning"}
+                >
+                  {rule.title}: applied at checkout to {rule.productCount}{" "}
+                  {rule.productCount === 1 ? "product" : "products"}
+                  {rule.productCount === 0 &&
+                    ". Check the collection or tag matches your products."}
+                </s-banner>
+              ))}
+            </s-stack>
+          )}
         </s-section>
       )}
 

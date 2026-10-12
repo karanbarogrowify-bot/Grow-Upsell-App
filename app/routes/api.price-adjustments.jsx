@@ -1,6 +1,7 @@
 
 import { authenticate } from "../shopify.server";
 import {
+  getPriceAdjustmentSyncStatus,
   loadDashboardPriceAdjustments,
   syncPriceAdjustmentsMetafields,
 } from "../services/price-adjustments.server";
@@ -13,9 +14,12 @@ export async function loader({ request }) {
   const { admin } = await authenticate.admin(request);
 
   try {
-    const rules = await loadDashboardPriceAdjustments(admin);
+    const [rules, sync] = await Promise.all([
+      loadDashboardPriceAdjustments(admin),
+      getPriceAdjustmentSyncStatus(admin),
+    ]);
 
-    return json({ ok: true, rules });
+    return json({ ok: true, rules, sync });
   } catch (error) {
     console.error("Failed to load price adjustments:", error);
 
@@ -152,11 +156,14 @@ export async function action({ request }) {
       body.rules,
     );
 
+    const sync = await getPriceAdjustmentSyncStatus(admin);
+
     return json({
       ok: true,
       message: "Price adjustment rules saved and synchronized.",
       rules: result.rules,
       cartTransform: result.cartTransform,
+      sync,
     });
   } catch (error) {
   console.error(

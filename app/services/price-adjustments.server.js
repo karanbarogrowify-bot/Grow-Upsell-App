@@ -148,6 +148,54 @@ async function getMatchingProductIds(admin, rule) {
 }
 
 /**
+ * Reports what the Cart Transform currently has configured, so the
+ * dashboard can show whether checkout will apply the rules.
+ */
+export async function getPriceAdjustmentSyncStatus(admin) {
+  const response = await admin.graphql(
+    `#graphql
+      query PriceAdjustmentSyncStatus {
+        cartTransforms(first: 10) {
+          nodes {
+            id
+            metafield(
+              namespace: "$app"
+              key: "checkoutPriceAdjustments"
+            ) {
+              jsonValue
+            }
+          }
+        }
+      }
+    `,
+  );
+
+  const body = await response.json();
+
+  if (body.errors?.length) {
+    throw new Error(body.errors.map((error) => error.message).join(", "));
+  }
+
+  const transforms = body.data?.cartTransforms?.nodes || [];
+  const transform =
+    transforms.find((item) => item.metafield?.jsonValue) || transforms[0];
+  const rules = transform?.metafield?.jsonValue?.rules;
+
+  return {
+    registered: Boolean(transform),
+    rules: Array.isArray(rules)
+      ? rules.map((rule) => ({
+          id: rule.id,
+          title: rule.title,
+          productCount: Array.isArray(rule.productIds)
+            ? rule.productIds.length
+            : 0,
+        }))
+      : [],
+  };
+}
+
+/**
  * Registers the Cart Transform if necessary and synchronizes its rules.
  */
 async function syncCartTransformConfiguration(admin, checkoutRules) {

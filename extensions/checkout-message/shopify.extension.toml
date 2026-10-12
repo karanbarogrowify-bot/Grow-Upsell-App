@@ -19,6 +19,10 @@ uid = "298cc9ec-fb3b-f045-9d95-55ced6ecf5fa9bd3f9b1"
 module = "./src/Checkout.jsx"
 target = "purchase.checkout.block.render"
 
+[[extensions.targeting]]
+module = "./src/PriceAdjustmentMessage.jsx"
+target = "purchase.checkout.cart-line-item.render-after"
+
 [extensions.capabilities]
 # Gives your extension access to directly query Shopify’s storefront API.
 # https://shopify.dev/docs/api/checkout-ui-extensions/latest/configuration#api-access
@@ -36,6 +40,10 @@ api_access = true
 [[extensions.metafields]]
 namespace = "$app"
 key = "checkoutMessages"
+
+[[extensions.metafields]]
+namespace = "$app"
+key = "checkoutPriceAdjustments"
 
 # Defines settings that will be collected from merchants installing
 # your extension. Learn more:
