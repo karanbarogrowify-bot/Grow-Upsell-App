@@ -1,16 +1,13 @@
-
 /** @typedef {import("../generated/api").CartTransformRunInput} CartTransformRunInput */
 /** @typedef {import("../generated/api").CartTransformRunResult} CartTransformRunResult */
 
 const NO_CHANGES = { operations: [] };
 
 /**
- * Updates only the dedicated rush-charge variant.
- * Original product prices are never modified.
+ * Increases the price of cart lines whose product matches an active rule.
  *
- * Configuration must contain:
+ * Configuration (cart transform metafield $app.checkoutPriceAdjustments):
  * - rules: active rules with productIds and percentage
- * - feeVariantId: Shopify variant GID for the rush-charge product
  *
  * @param {CartTransformRunInput} input
  * @returns {CartTransformRunResult}
@@ -23,39 +20,22 @@ export function cartTransformRun(input) {
   }
 
   const rules = configuration.rules;
-  const feeVariantId = configuration.feeVariantId;
 
-  if (!Array.isArray(rules) || !feeVariantId) {
+  if (!Array.isArray(rules) || rules.length === 0) {
     return NO_CHANGES;
   }
 
-  let totalRushCharge = 0;
-  let currencyCode = null;
-  let feeLine = null;
+  const operations = [];
 
   for (const line of input.cart.lines) {
     const merchandise = line.merchandise;
+    const productId =
+      merchandise && "product" in merchandise
+        ? merchandise.product?.id
+        : null;
+    const unitAmount = Number(line.cost?.amountPerQuantity?.amount);
 
-    if (!merchandise || !("id" in merchandise)) {
-      continue;
-    }
-
-    // Identify the dedicated fee line.
-    if (merchandise.id === feeVariantId) {
-      feeLine = line;
-      continue;
-    }
-
-    const productId = merchandise.product?.id;
-    const unitAmount = Number(line.cost.amountPerQuantity.amount);
-    const quantity = Number(line.quantity);
-
-    if (
-      !productId ||
-      !Number.isFinite(unitAmount) ||
-      !Number.isFinite(quantity) ||
-      quantity <= 0
-    ) {
+    if (!productId || !Number.isFinite(unitAmount) || unitAmount <= 0) {
       continue;
     }
 
@@ -73,33 +53,22 @@ export function cartTransformRun(input) {
       continue;
     }
 
-    const lineAmount = unitAmount * quantity;
-    totalRushCharge += lineAmount * (Number(matchingRule.percentage) / 100);
+    const adjustedAmount =
+      unitAmount * (1 + Number(matchingRule.percentage) / 100);
 
-    currencyCode ??= line.cost.amountPerQuantity.currencyCode;
-  }
-
-  // No fee line or no qualifying products: do not alter any price.
-  if (!feeLine || !currencyCode || totalRushCharge <= 0) {
-    return NO_CHANGES;
-  }
-
-  const feeUnitAmount = Number(totalRushCharge.toFixed(2));
-
-  return {
-    operations: [
-      {
-        lineUpdate: {
-          cartLineId: feeLine.id,
-          price: {
-            adjustment: {
-              fixedPricePerUnit: {
-                amount: feeUnitAmount,
-              },
+    operations.push({
+      lineUpdate: {
+        cartLineId: line.id,
+        price: {
+          adjustment: {
+            fixedPricePerUnit: {
+              amount: adjustedAmount.toFixed(2),
             },
           },
         },
       },
-    ],
-  };
+    });
+  }
+
+  return operations.length > 0 ? { operations } : NO_CHANGES;
 }

@@ -57,28 +57,50 @@ export async function loadDashboardPriceAdjustments(admin) {
   return Array.isArray(rules) ? rules.map(normalizePriceAdjustment) : [];
 }
 
+async function fetchAllProductIds(admin, query, variables, getConnection) {
+  const productIds = new Set();
+  let after = null;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const response = await admin.graphql(query, {
+      variables: { ...variables, first: 250, after },
+    });
+
+    const body = await response.json();
+
+    if (body.errors?.length) {
+      throw new Error(
+        body.errors.map((error) => error.message).join(", "),
+      );
+    }
+
+    const connection = getConnection(body.data);
+
+    if (!connection) {
+      return [...productIds];
+    }
+
+    for (const product of connection.nodes || []) {
+      productIds.add(product.id);
+    }
+
+    hasNextPage = Boolean(connection.pageInfo?.hasNextPage);
+    after = connection.pageInfo?.endCursor ?? null;
+  }
+
+  return [...productIds];
+}
+
 /**
  * Finds product IDs matching a rule using Shopify Admin GraphQL.
  */
 async function getMatchingProductIds(admin, rule) {
-  const productIds = new Set();
-  let after = null;
-
-  const query =
-    rule.targetType === "tag"
-      ? `tag:${JSON.stringify(rule.productTag)}`
-      : rule.collectionIds
-          .map((id) => `collection_id:${id.split("/").pop()}`)
-          .join(" OR ");
-
-  while (true) {
-    const response = await admin.graphql(
+  if (rule.targetType === "tag") {
+    return fetchAllProductIds(
+      admin,
       `#graphql
-        query MatchingProducts(
-          $first: Int!
-          $after: String
-          $query: String!
-        ) {
+        query ProductsByTag($first: Int!, $after: String, $query: String!) {
           products(first: $first, after: $after, query: $query) {
             nodes {
               id
@@ -90,38 +112,36 @@ async function getMatchingProductIds(admin, rule) {
           }
         }
       `,
-      {
-        variables: {
-          first: 250,
-          after,
-          query,
-        },
-      },
+      { query: `tag:${JSON.stringify(rule.productTag)}` },
+      (data) => data?.products,
+    );
+  }
+
+  const productIds = new Set();
+
+  for (const collectionId of rule.collectionIds) {
+    const ids = await fetchAllProductIds(
+      admin,
+      `#graphql
+        query ProductsByCollection($id: ID!, $first: Int!, $after: String) {
+          collection(id: $id) {
+            products(first: $first, after: $after) {
+              nodes {
+                id
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
+          }
+        }
+      `,
+      { id: collectionId },
+      (data) => data?.collection?.products,
     );
 
-    const body = await response.json();
-
-    if (body.errors?.length) {
-      throw new Error(
-        body.errors.map((error) => error.message).join(", "),
-      );
-    }
-
-    const connection = body.data?.products;
-
-    if (!connection) {
-      throw new Error("Shopify did not return matching products.");
-    }
-
-    for (const product of connection.nodes || []) {
-      productIds.add(product.id);
-    }
-
-    if (!connection.pageInfo?.hasNextPage) {
-      break;
-    }
-
-    after = connection.pageInfo.endCursor;
+    ids.forEach((id) => productIds.add(id));
   }
 
   return [...productIds];
@@ -136,6 +156,7 @@ async function syncCartTransformConfiguration(admin, checkoutRules) {
   };
 
   const metafieldInput = {
+    namespace: CHECKOUT_PRICE_ADJUSTMENTS_METAFIELD.namespace,
     key: CHECKOUT_PRICE_ADJUSTMENTS_METAFIELD.key,
     type: "json",
     value: JSON.stringify(configuration),
@@ -171,10 +192,11 @@ async function syncCartTransformConfiguration(admin, checkoutRules) {
 
   const transforms = existingBody.data?.cartTransforms?.nodes || [];
 
-  // Prefer the transform already configured by this app.
-  const existingTransform = transforms.find(
-    (transform) => transform.metafield?.id,
-  );
+  // cartTransforms only returns this app's transforms. Prefer the one
+  // already configured, otherwise reuse any existing one.
+  const existingTransform =
+    transforms.find((transform) => transform.metafield?.id) ||
+    transforms[0];
 
   if (existingTransform) {
     const updateResponse = await admin.graphql(
@@ -223,14 +245,6 @@ async function syncCartTransformConfiguration(admin, checkoutRules) {
       action: "updated",
       cartTransformId: existingTransform.id,
     };
-  }
-
-  // If a transform exists without this app's configuration, don't create
-  // another one automatically.
-  if (transforms.length > 0) {
-    throw new Error(
-      "A Cart Transform already exists, but its app configuration was not found. Check the existing transform before registering another.",
-    );
   }
 
   const createResponse = await admin.graphql(

@@ -15,13 +15,13 @@ export async function loader({ request }) {
   try {
     const rules = await loadDashboardPriceAdjustments(admin);
 
-    return json({ success: true, rules });
+    return json({ ok: true, rules });
   } catch (error) {
     console.error("Failed to load price adjustments:", error);
 
     return json(
       {
-        success: false,
+        ok: false,
         error: error.message || "Failed to load price adjustments.",
       },
       { status: 500 },
@@ -34,7 +34,7 @@ export async function action({ request }) {
 
   if (request.method !== "POST") {
     return json(
-      { success: false, error: "Method not allowed." },
+      { ok: false, error: "Method not allowed." },
       { status: 405 },
     );
   }
@@ -44,14 +44,14 @@ export async function action({ request }) {
 
     if (!Array.isArray(body.rules)) {
       return json(
-        { success: false, error: "Rules must be an array." },
+        { ok: false, error: "Rules must be an array." },
         { status: 400 },
       );
     }
 
     if (body.rules.length > 100) {
       return json(
-        { success: false, error: "You can save a maximum of 100 rules." },
+        { ok: false, error: "You can save a maximum of 100 rules." },
         { status: 400 },
       );
     }
@@ -62,7 +62,7 @@ export async function action({ request }) {
       if (!rule.id || ids.has(String(rule.id))) {
         return json(
           {
-            success: false,
+            ok: false,
             error: "Every rule must have a unique ID.",
           },
           { status: 400 },
@@ -82,7 +82,7 @@ export async function action({ request }) {
       ) {
         return json(
           {
-            success: false,
+            ok: false,
             error: `Invalid percentage for "${rule.title || rule.id}".`,
           },
           { status: 400 },
@@ -92,7 +92,7 @@ export async function action({ request }) {
       if (!["collection", "tag"].includes(targetType)) {
         return json(
           {
-            success: false,
+            ok: false,
             error: `Invalid target type for "${rule.title || rule.id}".`,
           },
           { status: 400 },
@@ -105,7 +105,7 @@ export async function action({ request }) {
       ) {
         return json(
           {
-            success: false,
+            ok: false,
             error: `Enter a product tag for "${rule.title || rule.id}".`,
           },
           { status: 400 },
@@ -119,7 +119,7 @@ export async function action({ request }) {
       ) {
         return json(
           {
-            success: false,
+            ok: false,
             error: `Select a collection for "${rule.title || rule.id}".`,
           },
           { status: 400 },
@@ -129,7 +129,7 @@ export async function action({ request }) {
       if (!String(rule.title || "").trim()) {
         return json(
           {
-            success: false,
+            ok: false,
             error: "Every rule needs a title.",
           },
           { status: 400 },
@@ -139,7 +139,7 @@ export async function action({ request }) {
       if (!["Active", "Draft"].includes(rule.status)) {
         return json(
           {
-            success: false,
+            ok: false,
             error: `Invalid status for "${rule.title}".`,
           },
           { status: 400 },
@@ -153,7 +153,7 @@ export async function action({ request }) {
     );
 
     return json({
-      success: true,
+      ok: true,
       message: "Price adjustment rules saved and synchronized.",
       rules: result.rules,
       cartTransform: result.cartTransform,
@@ -166,7 +166,7 @@ export async function action({ request }) {
 
     return json(
         {
-        success: false,
+        ok: false,
         error: error?.message || "Failed to save price adjustments.",
         details: error?.cause?.message || null,
         },

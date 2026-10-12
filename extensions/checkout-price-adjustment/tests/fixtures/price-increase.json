@@ -1,0 +1,62 @@
+{
+  "payload": {
+    "export": "cart-transform-run",
+    "target": "cart.transform.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/1",
+            "quantity": 2,
+            "cost": {
+              "amountPerQuantity": { "amount": "1000.0", "currencyCode": "INR" }
+            },
+            "merchandise": {
+              "id": "gid://shopify/ProductVariant/11",
+              "product": { "id": "gid://shopify/Product/1" }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/2",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": { "amount": "500.0", "currencyCode": "INR" }
+            },
+            "merchandise": {
+              "id": "gid://shopify/ProductVariant/22",
+              "product": { "id": "gid://shopify/Product/2" }
+            }
+          }
+        ]
+      },
+      "cartTransform": {
+        "configuration": {
+          "jsonValue": {
+            "rules": [
+              {
+                "id": "price-adjustment-1",
+                "status": "Active",
+                "percentage": 10,
+                "productIds": ["gid://shopify/Product/1"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "lineUpdate": {
+            "cartLineId": "gid://shopify/CartLine/1",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": { "amount": "1100.00" }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
