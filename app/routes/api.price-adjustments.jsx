@@ -159,18 +159,18 @@ export async function action({ request }) {
       cartTransform: result.cartTransform,
     });
   } catch (error) {
-    console.error(
-        "Failed to save price adjustments:",
+  console.error(
+    "Failed to save price adjustments:",
         error?.stack || error,
-        );
+    );
 
-        return json(
+    return json(
         {
-            success: false,
-            error: error?.message || "Failed to save price adjustments.",
-            details: error?.cause?.message || null,
+        success: false,
+        error: error?.message || "Failed to save price adjustments.",
+        details: error?.cause?.message || null,
         },
         { status: 500 },
-        );
+    );
   }
 }
