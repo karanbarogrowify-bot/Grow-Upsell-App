@@ -1,3 +1,4 @@
+
 import {
   APP_METAFIELD_NAMESPACE,
   readShopJsonMetafield,
@@ -13,6 +14,8 @@ export const CHECKOUT_PRICE_ADJUSTMENTS_METAFIELD = {
   namespace: APP_METAFIELD_NAMESPACE,
   key: "checkoutPriceAdjustments",
 };
+
+const CART_TRANSFORM_HANDLE = "checkout-price-adjustment";
 
 function normalizePriceAdjustment(rule) {
   return {
@@ -55,23 +58,27 @@ export async function loadDashboardPriceAdjustments(admin) {
 }
 
 /**
- * Finds product IDs matching a rule using Shopify's Admin GraphQL API.
- * Collection and tag searches are resolved server-side.
+ * Finds product IDs matching a rule using Shopify Admin GraphQL.
  */
 async function getMatchingProductIds(admin, rule) {
   const productIds = new Set();
   let after = null;
 
-  while (true) {
-    const query = rule.targetType === "tag"
-      ? "tag:" + JSON.stringify(rule.productTag)
+  const query =
+    rule.targetType === "tag"
+      ? `tag:${JSON.stringify(rule.productTag)}`
       : rule.collectionIds
-          .map((id) => "collection_id:" + id.split("/").pop())
+          .map((id) => `collection_id:${id.split("/").pop()}`)
           .join(" OR ");
 
+  while (true) {
     const response = await admin.graphql(
       `#graphql
-        query MatchingProducts($first: Int!, $after: String, $query: String!) {
+        query MatchingProducts(
+          $first: Int!
+          $after: String
+          $query: String!
+        ) {
           products(first: $first, after: $after, query: $query) {
             nodes {
               id
@@ -110,12 +117,171 @@ async function getMatchingProductIds(admin, rule) {
       productIds.add(product.id);
     }
 
-    if (!connection.pageInfo?.hasNextPage) break;
+    if (!connection.pageInfo?.hasNextPage) {
+      break;
+    }
 
     after = connection.pageInfo.endCursor;
   }
 
   return [...productIds];
+}
+
+/**
+ * Registers the Cart Transform if necessary and synchronizes its rules.
+ */
+async function syncCartTransformConfiguration(admin, checkoutRules) {
+  const configuration = {
+    rules: checkoutRules,
+  };
+
+  const metafieldInput = {
+    key: CHECKOUT_PRICE_ADJUSTMENTS_METAFIELD.key,
+    type: "json",
+    value: JSON.stringify(configuration),
+  };
+
+  // Find an existing Cart Transform belonging to this app.
+  const existingResponse = await admin.graphql(
+    `#graphql
+      query GetCartTransforms {
+        cartTransforms(first: 10) {
+          nodes {
+            id
+            functionId
+            metafield(
+              namespace: "$app"
+              key: "checkoutPriceAdjustments"
+            ) {
+              id
+            }
+          }
+        }
+      }
+    `,
+  );
+
+  const existingBody = await existingResponse.json();
+
+  if (existingBody.errors?.length) {
+    throw new Error(
+      existingBody.errors.map((error) => error.message).join(", "),
+    );
+  }
+
+  const transforms = existingBody.data?.cartTransforms?.nodes || [];
+
+  // Prefer the transform already configured by this app.
+  const existingTransform = transforms.find(
+    (transform) => transform.metafield?.id,
+  );
+
+  if (existingTransform) {
+    const updateResponse = await admin.graphql(
+      `#graphql
+        mutation UpdateCartTransformConfiguration(
+          $metafields: [MetafieldsSetInput!]!
+        ) {
+          metafieldsSet(metafields: $metafields) {
+            metafields {
+              id
+              key
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }
+      `,
+      {
+        variables: {
+          metafields: [
+            {
+              ...metafieldInput,
+              ownerId: existingTransform.id,
+            },
+          ],
+        },
+      },
+    );
+
+    const updateBody = await updateResponse.json();
+    const payload = updateBody.data?.metafieldsSet;
+
+    const errors = [
+      ...(updateBody.errors || []).map((error) => error.message),
+      ...(payload?.userErrors || []).map((error) => error.message),
+    ];
+
+    if (errors.length) {
+      throw new Error(errors.join(", "));
+    }
+
+    return {
+      success: true,
+      action: "updated",
+      cartTransformId: existingTransform.id,
+    };
+  }
+
+  // If a transform exists without this app's configuration, don't create
+  // another one automatically.
+  if (transforms.length > 0) {
+    throw new Error(
+      "A Cart Transform already exists, but its app configuration was not found. Check the existing transform before registering another.",
+    );
+  }
+
+  const createResponse = await admin.graphql(
+    `#graphql
+      mutation CreateCartTransform(
+        $functionHandle: String!
+        $metafields: [MetafieldInput!]!
+      ) {
+        cartTransformCreate(
+          functionHandle: $functionHandle
+          metafields: $metafields
+        ) {
+          cartTransform {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `,
+    {
+      variables: {
+        functionHandle: CART_TRANSFORM_HANDLE,
+        metafields: [metafieldInput],
+      },
+    },
+  );
+
+  const createBody = await createResponse.json();
+  const payload = createBody.data?.cartTransformCreate;
+
+  const errors = [
+    ...(createBody.errors || []).map((error) => error.message),
+    ...(payload?.userErrors || []).map((error) => error.message),
+  ];
+
+  if (errors.length) {
+    throw new Error(errors.join(", "));
+  }
+
+  if (!payload?.cartTransform?.id) {
+    throw new Error("Shopify did not return a Cart Transform ID.");
+  }
+
+  return {
+    success: true,
+    action: "created",
+    cartTransformId: payload.cartTransform.id,
+  };
 }
 
 export async function syncPriceAdjustmentsMetafields(admin, rules = []) {
@@ -138,6 +304,7 @@ export async function syncPriceAdjustmentsMetafields(admin, rules = []) {
     });
   }
 
+  // Keep the existing shop-level dashboard metafields.
   await setShopJsonMetafields(admin, [
     {
       ...PRICE_ADJUSTMENTS_METAFIELD,
@@ -149,8 +316,15 @@ export async function syncPriceAdjustmentsMetafields(admin, rules = []) {
     },
   ]);
 
+  // Also register/update the actual Cart Transform configuration.
+  const cartTransform = await syncCartTransformConfiguration(
+    admin,
+    checkoutRules,
+  );
+
   return {
     rules: normalizedRules,
     activeRules: checkoutRules,
+    cartTransform,
   };
 }
